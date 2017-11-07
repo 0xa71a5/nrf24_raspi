@@ -10,23 +10,7 @@ using namespace std;
 uint8_t PTX=0;
 uint8_t channel=0;
 uint8_t payload=32;
- 
-//This is a new test function for spi transfer
-void transferSync(uint8_t *dataout,uint8_t *datain,uint8_t len){
-        uint8_t *copy_dataout = (uint8_t *)malloc(len);
-        memcpy(copy_dataout,dataout,len);//Backup origin dataout
-        wiringPiSPIDataRW(SPI_CHANNEL,copy_dataout,len);//SPI transfer
-        memcpy(datain,copy_dataout,len);
-        free(copy_dataout);
-}
 
-//This is a new test function for spi transfer
-void transmitSync(uint8_t *dataout,uint8_t len){
-        uint8_t *copy_dataout = (uint8_t *)malloc(len);
-        memcpy(copy_dataout,dataout,len);//Backup origin dataout
-        wiringPiSPIDataRW(SPI_CHANNEL,copy_dataout,len);//SPI transfer
-        free(copy_dataout);
-}
 
 void nrf_init() 
 {   
@@ -43,6 +27,7 @@ void nrf_config()
     // Set length of incoming payload 
     configRegister(RX_PW_P0, payload);
     configRegister(RX_PW_P1, payload);
+    configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
     // Start receiver 
     powerUpRx();
     flushRx();
@@ -77,6 +62,7 @@ extern bool rxFifoEmpty(){
 extern void getData(uint8_t * data) // Reads payload bytes into data array
 {
     uint8_t *temp_buffer = (uint8_t *)malloc(payload+1);
+    memset(temp_buffer,0,payload+1);
     temp_buffer[0] = R_RX_PAYLOAD;
     wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,payload+1);
     memcpy(data,temp_buffer+1,payload);
@@ -136,6 +122,7 @@ void nrf_send(uint8_t * value) // Sends a data package to the default address. B
     wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,payload+1);
 
     ceHi();                     // Start transmission
+    while(isSending());
 }
 bool isSending(){
         uint8_t status;
@@ -204,4 +191,43 @@ void setPayloadLength(int length)
     payload = length;
     configRegister(RX_PW_P0, payload);
     configRegister(RX_PW_P1, payload);
+}
+
+extern "C"{
+
+  void nrf24_setup(uint8_t *my_addr,int channel)
+  {
+    setChannel(channel);
+    nrf_init();
+    setRADDR(my_addr);
+    setPayloadLength(32);
+    nrf_config();
+  }
+
+  void nrf24_tx_addr(uint8_t *target_addr)
+  {
+    setTADDR(target_addr);
+  }
+
+  void nrf24_send(uint8_t *data)
+  {
+    nrf_send(data);
+  }
+
+  uint8_t nrf24_available()
+  {
+    return dataReady();
+  }
+
+  void nrf24_read(uint8_t *data)
+  {
+      getData(data);
+  }
+
+  void nrf_test(uint8_t *data)
+  {
+    uint8_t *t = "hello";
+    memcpy(data,t,strlen(t)+1);
+  }
+
 }
