@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IOT Server</title>
+    <meta charset="utf-8">
+</head>
+<script type="text/javascript" src="http://www.w3school.com.cn/jquery/jquery-1.11.1.min.js"></script>
+<script type="text/javascript">  
+    function parseJson(w) {
+        return eval("(" + w + ")");
+    }
+    function getXmlhttp() {  
+        var xmlhttp;  
+        if (window.XMLHttpRequest) { 
+            xmlhttp = new XMLHttpRequest();  
+        } else {
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");  
+        }  
+        return xmlhttp;  
+    }  
+    var xmlhttp = getXmlhttp();  
+    xmlhttp.onreadystatechange = function() {  
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {   
+                    Handle_Command(xmlhttp.responseText)  
+                }  
+            }   
+    function ws_send(toSend)
+    {
+        xmlhttp.open("POST", "api", true);  
+        xmlhttp.send(toSend);  
+    }
+
+    function Handle_Command(command)
+    {
+        var recvStr=command;
+        console.log("recvStr:"+recvStr);
+        var jsonObject=parseJson(recvStr);//将字符串转换成json
+        var Type=jsonObject["Type"];        //获取json的Type字段
+        var Content=jsonObject["Content"];  //获取json的Content字段
+
+        if(Type == "getDhtStatusResult")
+        {
+            $("#status").html(Content["status"]);
+        }
+        else if (Type == "getHumidityResult" )
+        {
+            $("#humidity").html(Content["humidity"]);
+        }
+        else if(Type == "getTemperatureResult" )
+        {
+            $("#temperature").html(Content["temperature"]);
+        }   
+    }
+
+    function getDhtStatus(){
+        var content = {'deviceId': $("#deviceId").val()};
+        var package = {
+            'Type': 'getDhtStatus',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));
+    }
+
+    function getTemperature() {
+        var content = {'deviceId': $("#deviceId").val()};
+        var package = {
+            'Type': 'getTemperature',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));
+    }
+
+    function getHumidity() {
+        var content = {'deviceId': $("#deviceId").val()};
+        var package = {
+            'Type': 'getHumidity',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));
+    }
+
+    function test()
+    {
+        alert($("#deviceId").val())
+    }
+
+</script>  
+
+<body>
+设备ID <input type="text" name="deviceId" id="deviceId" value="0" />  <br><br>
+<button type="button"  onclick="getDhtStatus()" />获取在线状态 </button> <font id="status"></font><br><br>
+<button type="button"  onclick="getTemperature()" />获取温度数据 </button> <font id="temperature"></font><br><br>
+<button type="button"  onclick="getHumidity()" />获取湿度数据 </button> <font id="humidity"></font><br><br>
+<button type="button"  onclick="test()" />测试 </button> <font id="test"></font><br><br>
+
+
+
+
+
+</body>
+</html>
