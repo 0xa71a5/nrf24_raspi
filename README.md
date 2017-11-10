@@ -13,6 +13,9 @@ To begin with c or c++,you can follow the way which testTx.cpp does.
 你可以使用c、c++或者Python来调用本项目的API接口以实现在树莓派上使用Nrf24L01进行无线通信。
 test2.py是使用Python进行芯片控制的一个demo  
 testTx.cpp是使用c或c++ 进行芯片控制的一个demo
+
+服务器端入口文件是:IOT_Server.py
+每一个物联网节点的类实现在 IOT_Devices文件夹中
 </pre>
 
 #### Wire connection:

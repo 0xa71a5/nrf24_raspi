@@ -4,6 +4,8 @@
 import time
 import os
 import lxc_nrf24
+from IOT_Devices.DHT_Sensor import *
+from IOT_Devices.AirconditionController import *
 import json
 import tornado.httpserver
 import tornado.web
@@ -45,25 +47,8 @@ class IOT:
             sender_payload = json.loads("{"+",".join(["\"{}\":\"{}\"".format(x.split(":")[0],x.split(":")[1]) for x in data.split(",")[1:]])+"}")
             if(sender_addr == machineId[-1]): #接收方地址与实际发送地址相符合
                 return (True,sender_payload,)
+        print "Communicate to node failed!"
         return (False,None)
-
-
-class DHT_Sensor: #温湿度传感器
-    def __init__(self,IOT_Center,machineId):
-        self.IOT = IOT_Center #获取通信接口
-        self.machineId = machineId #获取本传感器的通信地址
-
-    def getOnlineStatus(self): #获取传感器的在线状态
-        result,data = self.IOT.communicateToNode(self.machineId,"get","status")
-        return data["status"] if(result) else "offline" #如果获取到通信结果  那么返回当前状态
-
-    def getHumidity(self): #获取传感器的湿度数值
-        result,data = self.IOT.communicateToNode(self.machineId,"get","humidity")
-        return data["humidity"] if(result) else ""   
-
-    def getTemperature(self):
-        result,data = self.IOT.communicateToNode(self.machineId,"get","temperature")
-        return data["temperature"] if(result) else ""
 
 
 class IndexHandler(tornado.web.RequestHandler):
@@ -79,6 +64,8 @@ class ApiHandler(tornado.web.RequestHandler):
 
     def post(self):
         global dhtSensors
+        global airCondition1
+
         postdata = self.request.body.decode('utf-8')
         postdata = json.loads(postdata)
         typeVal  = postdata["Type"]
@@ -89,8 +76,8 @@ class ApiHandler(tornado.web.RequestHandler):
                 
             }
         }
-        deviceId = int(contentVal["deviceId"]) #目标设备ID
-        deviceId = deviceId if(deviceId< len(dhtSensors)) else len(dhtSensors)-1 #判断设备ID是否合法
+        deviceId = 0 #目标设备ID
+        #deviceId = deviceId if(deviceId< len(dhtSensors)) else len(dhtSensors)-1 #判断设备ID是否合法
         if(typeVal == "getDhtStatus"):
             status = dhtSensors[deviceId].getOnlineStatus()
             returnData["Type"] = "getDhtStatusResult"
@@ -103,17 +90,35 @@ class ApiHandler(tornado.web.RequestHandler):
             humidity = dhtSensors[deviceId].getHumidity()
             returnData["Type"] = "getHumidityResult"
             returnData["Content"]["humidity"] = humidity
+        # 下面是空调控制器
+        elif(typeVal == "getAcStatus"):
+            status = airCondition1.getOnlineStatus()
+            returnData["Type"] = "getAcStatusResult"
+            returnData["Content"]["status"] = status
+        elif(typeVal == "turnOnAc"):
+            status = airCondition1.turnOnAc()
+            returnData["Type"] = "turnOnAcResult"
+            returnData["Content"]["result"] = status
+        elif(typeVal == "turnOffAc"):
+            status = airCondition1.turnOffAc()
+            returnData["Type"] = "turnOffAcResult"
+            returnData["Content"]["result"] = status
+        elif(typeVal == "setAcTemperature"):
+            temperature = contentVal["temperature"]
+            status = airCondition1.setAcTemperature(temperature)
+            returnData["Type"] = "setAcTemperatureResult"
+            returnData["Content"]["result"] = status
         self.write(json.dumps(returnData))
 
 if __name__ == '__main__':
     global myIOT
     global dhtSensors
-
+    global airCondition1
 
     myIOT = IOT("mac00")
     dhtSensor1 = DHT_Sensor( IOT_Center = myIOT,machineId = "mac01" )
-    dhtSensor2 = DHT_Sensor( IOT_Center = myIOT,machineId = "mac02" )
-    dhtSensors = [dhtSensor1,dhtSensor2]
+    airCondition1 = AirconditionController( IOT_Center = myIOT,machineId = "mac02" )
+    dhtSensors = [dhtSensor1,]
 
 
     app = tornado.web.Application([
