@@ -4,8 +4,9 @@
 import time
 import os
 import lxc_nrf24
-from IOT_Devices.DHT_Sensor import *
+from IOT_Devices.DHT_Sensor             import *
 from IOT_Devices.AirconditionController import *
+from IOT_Devices.ElectricIron           import *
 import json
 import tornado.httpserver
 import tornado.web
@@ -108,7 +109,27 @@ class ApiHandler(tornado.web.RequestHandler):
             status = airCondition1.setAcTemperature(temperature)
             returnData["Type"] = "setAcTemperatureResult"
             returnData["Content"]["result"] = status
+        #下面是电烙铁控制器
+        elif(typeVal == "getElectricIronStatus"):
+            status = electricIron1.getOnlineStatus()
+            returnData["Type"] = "getElectricIronStatusResult"
+            returnData["Content"]["status"] = status
+        elif(typeVal == "getElectricIronSwitchStatus"):
+            status = electricIron1.getSwitchStatus()
+            returnData["Type"] = "getElectricIronSwitchStatusResult"
+            returnData["Content"]["status"] = status
+        elif(typeVal == "turnOnElectricPower"):
+            status = electricIron1.turnOnPower()
+            returnData["Type"] = "turnOnElectricPowerResult"
+            returnData["Content"]["result"] = status
+        elif(typeVal == "turnOffElectricPower"):
+            status = electricIron1.turnOffPower()
+            returnData["Type"] = "turnOffElectricPowerResult"
+            returnData["Content"]["result"] = status
+
+
         self.write(json.dumps(returnData))
+
 
 if __name__ == '__main__':
     global myIOT
@@ -118,6 +139,7 @@ if __name__ == '__main__':
     myIOT = IOT("mac00")
     dhtSensor1 = DHT_Sensor( IOT_Center = myIOT,machineId = "mac01" )
     airCondition1 = AirconditionController( IOT_Center = myIOT,machineId = "mac02" )
+    electricIron1 = ElectricIron( IOT_Center = myIOT,machineId = "mac03" )
     dhtSensors = [dhtSensor1,]
 
 

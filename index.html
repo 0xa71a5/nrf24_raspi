@@ -73,6 +73,31 @@
 
             $("#turnOffAcResult").html(Content["result"]);
         }
+        //下面是电烙铁控制器的代码
+        else if(Type == "getElectricIronStatusResult")
+        {
+            $("#electricIronStatus").html(Content["status"]);
+        }
+        else if(Type == "getElectricIronSwitchStatusResult")
+        {
+            $("#electricIronSwitchStatus").html(Content["status"]);
+        }
+        else if (Type == "turnOnElectricPowerResult" )
+        {
+            if(Content["result"] == "suc")
+                result="允许电烙铁工作"
+            else
+                result="通信失败"
+            $("#turnOnElectricPowerResult").html(result);
+        }
+        else if (Type == "turnOffElectricPowerResult" )
+        {
+            if(Content["result"] == "suc")
+                result="禁止电烙铁工作"
+            else
+                result="通信失败"
+            $("#turnOffElectricPowerResult").html(result);
+        }
     }
 
     function getDhtStatus(){
@@ -143,6 +168,47 @@
         ws_send(JSON.stringify(package));
     }
 
+    function getElectricIronStatus()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'getElectricIronStatus',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));
+    }
+
+    function getElectricIronSwitchStatus()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'getElectricIronSwitchStatus',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
+    function turnOnElectricPower()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'turnOnElectricPower',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
+    function turnOffElectricPower()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'turnOffElectricPower',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
+
 </script>  
 
 <body>
@@ -150,15 +216,17 @@
 <button type="button"  onclick="getDhtStatus()" />获取传感器状态 </button> <font id="status"></font><br><br>
 <button type="button"  onclick="getTemperature()" />获取温度数据 </button> <font id="temperature"></font><br><br>
 <button type="button"  onclick="getHumidity()" />获取湿度数据 </button> <font id="humidity"></font><br><br>
-
+<hr />
 <button type="button"  onclick="getAcStatus()" />获取空调控制器状态 </button> <font id="acStatus"></font><br><br>
 <button type="button"  onclick="turnOnAc()" />打开空调 </button> <font id="turnOnAcResult"></font><br><br>
 <button type="button"  onclick="setAcTemperature()" />设置空调温度 </button>  
 <input type="text" name="acTemperature" id="acTemperature" value="27" />  <br><br>
 <button type="button"  onclick="turnOffAc()" />关闭空调 </button> <font id="turnOffAcResult"></font><br><br>
-
-
-
+<hr />
+<button type="button"  onclick="getElectricIronStatus()" />获取电烙铁控制器状态 </button> <font id="electricIronStatus"></font><br><br>
+<button type="button"  onclick="getElectricIronSwitchStatus()" />获取电烙铁物理开关状态 </button> <font id="electricIronSwitchStatus"></font><br><br>
+<button type="button"  onclick="turnOnElectricPower()" />允许使用电烙铁 </button> <font id="turnOnElectricPowerResult"></font><br><br>
+<button type="button"  onclick="turnOffElectricPower()" />禁止使用电烙铁 </button> <font id="turnOffElectricPowerResult"></font><br><br>
 
 </body>
 </html>
