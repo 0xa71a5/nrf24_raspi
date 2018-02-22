@@ -157,6 +157,7 @@ void nrf_config()
     configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
     #else
     configRegister(EN_AA, 0x3f);
+    configRegister(SETUP_RETR,0x1f);//Setup retry 500us ,15 max retries
     #endif
     // Start receiver 
     powerUpRx();
@@ -452,7 +453,7 @@ void loop()
    }
    if(count%100==0)
    Serial.println(serialReceive);
-   //delay(5);
+   delay(55);
    if(dataReady()){
       getData(data);
       Serial.print("Got packet->");

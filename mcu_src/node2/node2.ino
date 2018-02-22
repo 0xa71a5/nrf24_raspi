@@ -416,12 +416,10 @@ void setup()
   channel = 12;
   nrf_init();
   setTADDR((byte *)"mac00");
-  myAddessByte = '1';
-  myaddr[4] = myAddessByte;
-  setRADDR((byte *)myaddr);
+  setRADDR((byte *)"mac02");
   payload = 32;
   nrf_config();
-  Serial.println("Begining!");
+  Serial.println("Begining! mac02 receiver");
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
@@ -429,15 +427,6 @@ void loop()
 {
    if(dataReady()){
       getData(data);
-      if(millis()-last_time>=1000)
-      {
-        Serial.print(count);
-        Serial.print(":");
-        Serial.println(data);
-        last_time = millis();
-      }
-      count++;
-      String sData = data;
-      //handlePacket(sData);
+      Serial.println(data);
   }
 }
