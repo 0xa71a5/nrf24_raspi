@@ -414,28 +414,50 @@ void setup()
   csnPin = 9;
   channel = 12;
   nrf_init();
-  setTADDR((byte *)"mac00");
-  myAddessByte = '1';
-  myaddr[4] = myAddessByte;
+  setTADDR((byte *)"mac01");
+  myaddr[4] = '0';
   setRADDR((byte *)myaddr);
   payload = 32;
   nrf_config();
   Serial.println("Begining!");
 }
 unsigned long int count=0;
-unsigned long last_time = 0;
+String serialReceive;
+uint8_t send_status;
 void loop()
 {
+/*
+  while(Serial.available())
+  {
+    serialReceive+=char(Serial.read());
+    delay(2);
+  }
+  if(serialReceive!="")
+  {
+    Serial.print("Send:");Serial.println(serialReceive);
+    nrf_send(serialReceive.c_str());
+    serialReceive = "";
+  }
+*/
+   serialReceive = String(count++);
+   
+   RETRY_ENTRY:
+   nrf_send(serialReceive.c_str());
+   while( ( send_status = isSending() ) == 1 ){ 
+   }
+   if(send_status==2)
+   {
+    Serial.println("Time out!Retry!");
+    goto RETRY_ENTRY;
+   }
+   if(count%100==0)
+   Serial.println(serialReceive);
+   //delay(5);
    if(dataReady()){
       getData(data);
-      if(millis()-last_time>=1000)
-      {
-        Serial.print(count);
-        Serial.print(":");
-        Serial.println(data);
-        last_time = millis();
-      }
-      count++;
+      Serial.print("Got packet->");
+      Serial.print(data);
+      Serial.println("<-");
       String sData = data;
       //handlePacket(sData);
   }
