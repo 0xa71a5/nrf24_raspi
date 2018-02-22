@@ -415,7 +415,7 @@ void setup()
   csnPin = 9;
   channel = 12;
   nrf_init();
-  setTADDR((byte *)"mac00");
+  setTADDR((byte *)"mac01");
   setRADDR((byte *)"mac02");
   payload = 32;
   nrf_config();
@@ -423,10 +423,31 @@ void setup()
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
+uint8_t send_status;
+#define MAX_RETRY 20
+uint16_t retry_times=0;
 void loop()
 {
    if(dataReady()){
       getData(data);
       Serial.println(data);
+      data[31] = '2';//This is my addr
+      
+      RETRY_ENTRY:
+      nrf_send(data);
+      while( ( send_status = isSending() ) == 1 ){ 
+      }
+      if(send_status==2)
+      {
+        Serial.println("Time out!Retry!");
+        if(retry_times++ < MAX_RETRY)
+          goto RETRY_ENTRY;
+        else
+          retry_times = 0;
+      }
+      Serial.println("Send back!");
   }
+
+
+  
 }

@@ -427,6 +427,7 @@ unsigned long int count=0;
 unsigned long last_time = 0;
 uint8_t send_status;
 String toSendString;
+uint8_t toSendBuffer[32];
 #define MAX_RETRY 20
 uint16_t retry_times=0;
 void loop()
@@ -436,20 +437,26 @@ void loop()
       Serial.print("Receive:");
       Serial.println(data);
   }
-  toSendString = String(count++);
-  RETRY_ENTRY:
-  nrf_send(toSendString.c_str());
-  while( ( send_status = isSending() ) == 1 ){ 
-  }
-  if(send_status==2)
+
+  if(millis()-last_time > 15)//Check every 50 ms
   {
-    Serial.println("Time out!Retry!");
-    if(retry_times++ < MAX_RETRY)
-      goto RETRY_ENTRY;
-    else
-      retry_times = 0;
+    toSendString = String(count++);
+    memcpy(toSendBuffer,toSendString.c_str(),31);
+    toSendBuffer[31]='0';//This is my addr
+    RETRY_ENTRY:
+    nrf_send(toSendBuffer);
+    while( ( send_status = isSending() ) == 1 ){ 
+    }
+    if(send_status==2)
+    {
+      Serial.println("Time out!Retry!");
+      if(retry_times++ < MAX_RETRY)
+        goto RETRY_ENTRY;
+      else
+        retry_times = 0;
+    }
+    Serial.print("Send:");
+    Serial.println(toSendString);
+    last_time=millis();
   }
-  Serial.print("Send:");
-  Serial.println(toSendString);
-  delay(50);
 }

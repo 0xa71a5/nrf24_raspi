@@ -427,14 +427,25 @@ uint8_t send_status;
 #define MAX_RETRY 20
 uint16_t retry_times=0;
 char data[32];
+uint8_t toSendBuffer[32];
 void loop()
 {
    if(dataReady()){
       getData(data);
       count++;
       Serial.print("Relay:");
-      Serial.println(data);
-      setTADDR((byte *)"mac02");
+      Serial.print(data);
+      if(data[31]=='0')
+      {
+        Serial.println("->");
+        setTADDR((byte *)"mac02");
+      }
+      else
+      {
+        Serial.println("<-");
+        setTADDR((byte *)"mac00");
+      }
+      
       RETRY_ENTRY:
       nrf_send(data);
       while( ( send_status = isSending() ) == 1 );
