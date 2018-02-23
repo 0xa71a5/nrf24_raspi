@@ -415,42 +415,28 @@ void setup()
   csnPin = 9;
   channel = 12;
   nrf_init();
-  setTADDR((byte *)"mac01");
-  setRADDR((byte *)"mac00");
+  setTADDR((byte *)"mac02");
+  setRADDR((byte *)"mac03");
   payload = 32;
   nrf_config();
-  Serial.println("Begining!mac00 sender.\n Press to continue");
-  while(Serial.available()==0);
-  Serial.read();
+  Serial.println("Begining!mac03 receiver.");
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
-uint32_t last_time2=0;
 uint8_t send_status;
 String toSendString;
 uint8_t toSendBuffer[32];
 #define MAX_RETRY 1
 uint16_t retry_times=0;
-int16_t remain_packs = 10;
-uint8_t work_state = 0;
 void loop()
 {
   if(dataReady()){
       getData(data);
-      Serial.print("Receive:");
       Serial.println(data);
-  }
-
-  if(millis()-last_time > 25)//Check every 50 ms
-  {
-    if(work_state==0)
-    {
-      if(remain_packs>0)remain_packs--;
-      toSendString = String(count++);
-      memcpy(toSendBuffer,toSendString.c_str(),31);
-      toSendBuffer[31]='0';//This is my addr
+      data[31] = '3';//This is my addr
+      
       RETRY_ENTRY:
-      nrf_send(toSendBuffer);
+      nrf_send(data);
       while( ( send_status = isSending() ) == 1 ){ 
       }
       if(send_status==2)
@@ -461,26 +447,6 @@ void loop()
         else
           retry_times = 0;
       }
-      Serial.print("Send:");
-      Serial.println(toSendString);
-    }
-    last_time=millis();
+      Serial.println("Send back!");
   }
-
-  if(work_state==0 && remain_packs<=0)
-  {
-    work_state = 1;
-    last_time2 = millis();
-  }
-
-  if(work_state == 1)
-  {
-    if(millis()-last_time2 > 1000)
-    {
-      last_time2 = millis();
-      work_state = 0;
-      remain_packs = 10;
-    }
-  }
-  
 }

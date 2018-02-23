@@ -424,7 +424,7 @@ void setup()
 unsigned long int count=0;
 unsigned long last_time = 0;
 uint8_t send_status;
-#define MAX_RETRY 20
+#define MAX_RETRY 1
 uint16_t retry_times=0;
 char data[32];
 uint8_t toSendBuffer[32];
@@ -445,6 +445,7 @@ void loop()
         Serial.println("<-");
         setTADDR((byte *)"mac00");
       }
+      data[31] = '1';//替换掉源地址为'1'
       
       RETRY_ENTRY:
       nrf_send(data);

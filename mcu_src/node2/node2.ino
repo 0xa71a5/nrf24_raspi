@@ -419,24 +419,34 @@ void setup()
   setRADDR((byte *)"mac02");
   payload = 32;
   nrf_config();
-  Serial.println("Begining! mac02 receiver");
+  Serial.println("Begining! mac02 (relay station)");
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
 uint8_t send_status;
-#define MAX_RETRY 20
+#define MAX_RETRY 1
 uint16_t retry_times=0;
 void loop()
 {
    if(dataReady()){
       getData(data);
-      Serial.println(data);
-      data[31] = '2';//This is my addr
-      
+      count++;
+      Serial.print("Relay:");
+      Serial.print(data);
+      if(data[31]=='1')
+      {
+        Serial.println("->");
+        setTADDR((byte *)"mac03");
+      }
+      else
+      {
+        Serial.println("<-");
+        setTADDR((byte *)"mac01");
+      }
+      data[31] = '2';
       RETRY_ENTRY:
       nrf_send(data);
-      while( ( send_status = isSending() ) == 1 ){ 
-      }
+      while( ( send_status = isSending() ) == 1 );
       if(send_status==2)
       {
         Serial.println("Time out!Retry!");
@@ -445,9 +455,6 @@ void loop()
         else
           retry_times = 0;
       }
-      Serial.println("Send back!");
   }
-
-
   
 }
