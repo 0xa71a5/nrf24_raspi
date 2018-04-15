@@ -193,7 +193,12 @@ void setPayloadLength(int length)
     configRegister(RX_PW_P1, payload);
 }
 
+
 extern "C"{
+  void nrf24_spi_init(void)
+  {
+    nrf_init();
+  }
 
   void nrf24_setup(uint8_t *my_addr,int channel)
   {
@@ -230,4 +235,8 @@ extern "C"{
     memcpy(data,t,strlen(t)+1);
   }
 
+  void read_status(void)
+  {
+    return getStatus();
+  }
 }
