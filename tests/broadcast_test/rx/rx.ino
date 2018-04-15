@@ -415,38 +415,29 @@ void setup()
   csnPin = 9;
   channel = 12;
   nrf_init();
-  setTADDR((byte *)"mac02");
-  setRADDR((byte *)"mac03");
+  setTADDR((byte *)"mac00");
+  myAddessByte = '1';
+  myaddr[4] = myAddessByte;
+  setRADDR((byte *)myaddr);
   payload = 32;
   nrf_config();
-  Serial.println("Begining!mac03 receiver.");
+  Serial.println("Begining!");
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
-uint8_t send_status;
-String toSendString;
-uint8_t toSendBuffer[32];
-#define MAX_RETRY 1
-uint16_t retry_times=0;
 void loop()
 {
-  if(dataReady()){
+   if(dataReady()){
       getData(data);
-      Serial.println(data);
-      data[31] = '3';//This is my addr
-      
-      RETRY_ENTRY:
-      nrf_send(data);
-      while( ( send_status = isSending() ) == 1 ){ 
-      }
-      if(send_status==2)
+      if(millis()-last_time>=1000)
       {
-        Serial.println("Time out!Retry!");
-        if(retry_times++ < MAX_RETRY)
-          goto RETRY_ENTRY;
-        else
-          retry_times = 0;
+        Serial.print(count);
+        Serial.print(":");
+        Serial.println(data);
+        last_time = millis();
       }
-      Serial.println("Send back!");
+      count++;
+      String sData = data;
+      //handlePacket(sData);
   }
 }

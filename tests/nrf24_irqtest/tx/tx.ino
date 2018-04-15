@@ -337,75 +337,14 @@ char data[32];
 bool work = true;
 char myAddessByte = '2' ; 
 
-void constructFormat(String &raw,String type,String value)
+void irq_service()
 {
-    if(raw.length()==0)
-    {
-      char temp[2]={0x00,0x00};
-      temp[0] = myAddessByte;
-      raw += temp;
-    }
-    raw += ","+type+":"+value;
+  //uint8_t status_flag = getStatus();
+  //configRegister(STATUS , status_flag);
+  //Serial.println(status_flag,HEX);
 }
 
-void parsePack(String type,String content,uint8_t senderId=0)
-{
-  String packet;
-  if(type=="get")//getVal1
-  {
-    if(content=="status")
-    {
-      constructFormat(packet,"status","online");
-      nrf_send(packet.c_str());
-    }
-    else if(content=="humidity")//time and val1
-    {
-      unsigned long timeNow = millis();
-      constructFormat(packet,"humidity",String(timeNow));
-      nrf_send(packet.c_str());
-    }
-    else if(content=="temperature")
-    {
-      unsigned long val1 = analogRead(A0);
-      constructFormat(packet,"temperature",String(val1));
-      nrf_send(packet.c_str());
-    }
-  }
-}
-void handlePacket(String input)
-{
-  if(input.length()<3)return;
-  uint8_t sendId = input[0];
-  String type,content;
-  uint8_t state = 0;
-  for(int i=2;i<input.length();i++)
-  {
-    char cur = input[i];
-    if(cur==':')
-    {
-      state = 2;
-    }
-    else if(cur == ',')
-    {
-      state = 0;
-      parsePack(type,content,sendId);
-      type="";
-      content="";
-    }
-    else
-    {
-      if(state == 0)
-      {
-        type += cur;
-      }
-      else if (state ==2)
-      {
-        content += cur;
-      }
-    }
-  }
-  parsePack(type,content,sendId);
-}
+uint8_t irq_pin = 2;
 void setup()
 {
   char myaddr[5]="mac0";
@@ -414,39 +353,36 @@ void setup()
   cePin = 8;
   csnPin = 9;
   channel = 12;
+  //pinMode(irq_pin,INPUT);
+  attachInterrupt(0,irq_service,FALLING);
   nrf_init();
-  setTADDR((byte *)"mac02");
-  setRADDR((byte *)"mac03");
+  setTADDR((byte *)"mac01");
+  setRADDR((byte *)"mac00");
   payload = 32;
   nrf_config();
-  Serial.println("Begining!mac03 receiver.");
+  Serial.println("Begining!This is mac00\nPlease enter to begin");
+  while(Serial.available()==0);
 }
 unsigned long int count=0;
-unsigned long last_time = 0;
+String serialReceive;
 uint8_t send_status;
-String toSendString;
-uint8_t toSendBuffer[32];
-#define MAX_RETRY 1
-uint16_t retry_times=0;
 void loop()
 {
-  if(dataReady()){
+   serialReceive = String(count++);
+   nrf_send(serialReceive.c_str());
+   while( ( send_status = isSending() ) == 1 ){ 
+   }
+   if(send_status==2)
+   {
+    Serial.println("Time out!");
+   }
+
+   if(count%10==0)
+   Serial.println(serialReceive);
+   delay(200);
+   if(dataReady()){
       getData(data);
+      Serial.print("Got packet->");
       Serial.println(data);
-      data[31] = '3';//This is my addr
-      
-      RETRY_ENTRY:
-      nrf_send(data);
-      while( ( send_status = isSending() ) == 1 ){ 
-      }
-      if(send_status==2)
-      {
-        Serial.println("Time out!Retry!");
-        if(retry_times++ < MAX_RETRY)
-          goto RETRY_ENTRY;
-        else
-          retry_times = 0;
-      }
-      Serial.println("Send back!");
   }
 }

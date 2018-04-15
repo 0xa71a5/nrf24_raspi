@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <wiringPi.h>
-#include <nrf24l01.h>
+#include "nrf24l01.h"
 using namespace std;
 
 void rx_test()
@@ -54,6 +54,7 @@ int main()//tx
     setup("clie1",12);
     setTADDR((uint8_t *)"serv1");
     char words[32];
+
     getData(data);
 
     while(1)

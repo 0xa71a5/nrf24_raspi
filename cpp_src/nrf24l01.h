@@ -83,6 +83,13 @@
 #define CE_PIN 6
 #define SPI_CHANNEL 0
 
+typedef struct __test_stru{
+    int aaa;
+    int bbb;
+    int ccc;
+}test_handle_t;
+// D:\\work\\IOT\\nrf24_raspi\\cpp_src
+
 void nrf_init();
 void nrf_config();
 void nrf_send(uint8_t *value);

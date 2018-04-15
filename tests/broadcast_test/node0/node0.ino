@@ -78,6 +78,7 @@
 #define REUSE_TX_PL   0xE3
 #define NOP           0xFF
 
+
 #define mirf_ADDR_LEN  5
 #define mirf_CONFIG ((1<<EN_CRC) | (0<<CRCO) )
 
@@ -153,23 +154,39 @@ void nrf_config()
     // Set length of incoming payload 
     configRegister(RX_PW_P0, payload);
     configRegister(RX_PW_P1, payload);
+    configRegister(RX_PW_P2, payload);
+    configRegister(EN_RXADDR , 0x07);//enable rxaddr 0,1,2
+    
     #ifdef DISABLE_SHOCKBURST
     configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
     #else
     configRegister(EN_AA, 0x3f);
-    configRegister(SETUP_RETR,0x1f);//Setup retry 500us ,15 max retries
+    configRegister(SETUP_RETR,0x24);//Setup retry 750us ,4 max retries
     #endif
+    
     // Start receiver 
     powerUpRx();
     flushRx();
 }
 
-void setRADDR(uint8_t * adr) // Sets the receiving address
+void setRADDR(uint8_t * adr,uint8_t addr_index=1) // Sets the receiving address
 {
         ceLow();
-        writeRegister(RX_ADDR_P1,adr,5);
+        switch(addr_index)
+        {
+          case 1:
+            writeRegister(RX_ADDR_P1,adr,5);
+            break;
+          case 2:
+            writeRegister(RX_ADDR_P2,adr,5);
+            break;
+          case 3:
+            writeRegister(RX_ADDR_P3,adr,5);
+            break;
+        }
         ceHi();
 }
+
 
 void setTADDR(uint8_t * adr) // Sets the transmitting address
 {
@@ -337,75 +354,6 @@ char data[32];
 bool work = true;
 char myAddessByte = '2' ; 
 
-void constructFormat(String &raw,String type,String value)
-{
-    if(raw.length()==0)
-    {
-      char temp[2]={0x00,0x00};
-      temp[0] = myAddessByte;
-      raw += temp;
-    }
-    raw += ","+type+":"+value;
-}
-
-void parsePack(String type,String content,uint8_t senderId=0)
-{
-  String packet;
-  if(type=="get")//getVal1
-  {
-    if(content=="status")
-    {
-      constructFormat(packet,"status","online");
-      nrf_send(packet.c_str());
-    }
-    else if(content=="humidity")//time and val1
-    {
-      unsigned long timeNow = millis();
-      constructFormat(packet,"humidity",String(timeNow));
-      nrf_send(packet.c_str());
-    }
-    else if(content=="temperature")
-    {
-      unsigned long val1 = analogRead(A0);
-      constructFormat(packet,"temperature",String(val1));
-      nrf_send(packet.c_str());
-    }
-  }
-}
-void handlePacket(String input)
-{
-  if(input.length()<3)return;
-  uint8_t sendId = input[0];
-  String type,content;
-  uint8_t state = 0;
-  for(int i=2;i<input.length();i++)
-  {
-    char cur = input[i];
-    if(cur==':')
-    {
-      state = 2;
-    }
-    else if(cur == ',')
-    {
-      state = 0;
-      parsePack(type,content,sendId);
-      type="";
-      content="";
-    }
-    else
-    {
-      if(state == 0)
-      {
-        type += cur;
-      }
-      else if (state ==2)
-      {
-        content += cur;
-      }
-    }
-  }
-  parsePack(type,content,sendId);
-}
 void setup()
 {
   char myaddr[5]="mac0";
@@ -416,37 +364,49 @@ void setup()
   channel = 12;
   nrf_init();
   setTADDR((byte *)"mac02");
-  setRADDR((byte *)"mac03");
+  setRADDR((byte *)"mac00",1);
   payload = 32;
   nrf_config();
-  Serial.println("Begining!mac03 receiver.");
+  Serial.println("Begining!mac00 sender.\n Press to continue");
+  while(Serial.available()==0);
+  Serial.read();
 }
 unsigned long int count=0;
 unsigned long last_time = 0;
+uint32_t last_time2=0;
 uint8_t send_status;
 String toSendString;
 uint8_t toSendBuffer[32];
 #define MAX_RETRY 1
 uint16_t retry_times=0;
+int16_t remain_packs = 10;
+uint8_t work_state = 0;
 void loop()
 {
   if(dataReady()){
       getData(data);
+      Serial.print("Receive:");
       Serial.println(data);
-      data[31] = '3';//This is my addr
-      
-      RETRY_ENTRY:
-      nrf_send(data);
-      while( ( send_status = isSending() ) == 1 ){ 
-      }
-      if(send_status==2)
-      {
-        Serial.println("Time out!Retry!");
-        if(retry_times++ < MAX_RETRY)
-          goto RETRY_ENTRY;
-        else
-          retry_times = 0;
-      }
-      Serial.println("Send back!");
   }
+
+  if(millis()-last_time > 500)//Check every 50 ms
+  {
+    Serial.print("Set addr...");
+    setTADDR((uint8_t *)"mac0F");//This is broadcase addr
+    toSendString   = String("Broadcast mac00=>")+String(count++);
+    Serial.print("Sending...");
+    nrf_send(toSendString.c_str());
+    Serial.println("Waiting if isSending...");   
+    while( ( send_status = isSending() ) == 1 ){ 
+   }
+    Serial.print("Send:");
+    Serial.println(toSendString);
+    if(send_status == 2)
+      Serial.println("Send timeout!\n");
+    else
+      Serial.println("Send success!\n");
+    
+    last_time = millis();
+  }
+ 
 }
