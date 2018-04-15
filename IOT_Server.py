@@ -7,6 +7,7 @@ import lxc_nrf24
 from iot_devices.DHT_Sensor             import *
 from iot_devices.AirconditionController import *
 from iot_devices.ElectricIron           import *
+from iot_devices.Light                  import *
 from collections import defaultdict
 import Queue
 import json
@@ -27,6 +28,7 @@ class IOT(threading.Thread):
     def __init__(self,my_addr):
         super(IOT,self).__init__()
         self.max_timeout = 10 #最多十次重发
+        self.send_wait_time = 0.1 # 100ms发射后等待时间
         self.rwlock = threading.Lock() #获取读写锁
         self.rx_queue = {} #弃用defaultdict(Queue.Queue) #接收数据缓冲区 发送方地址作为索引 以默认队列形式存储收到的数据
         self.rx_queue_buffersize = 1000 #设定每个接受地址的最大缓冲是1000
@@ -96,7 +98,7 @@ class IOT(threading.Thread):
                 self.rwlock.release() #释放读写锁
                 check_point = time.time() #记录发射时间点
                 while self.rx_queue[machineId].qsize() == 0 :
-                    if(time.time() - check_point > 0.01): #20ms一次发射周期
+                    if(time.time() - check_point > self.send_wait_time): #10ms一次发射周期
                         timeout += 1
                         break
             if( self.rx_queue[machineId].qsize()!=0): #接受到了返回的数据
@@ -107,26 +109,6 @@ class IOT(threading.Thread):
         except:
             pass
         return (returnTest,returnResult,)
-
-    def communicateToNode_(self,machineId,typeVal,contentVal): #与指定节点进行通信(not good)
-        toSendPacket = "{},{}:{}".format(machineId,typeVal,contentVal)
-        #self.flushRxBuffer()
-        timeout = 0
-        while( self.machine.available() == False and timeout< self.max_timeout ):
-            self.machine.send_to(toSendPacket,machineId)
-            check_point = time.time() #记录发射时间点
-            while( self.machine.available()==False ):
-                if(time.time() - check_point > 0.01): #10ms试一次超时周期
-                    timeout+=1 
-                    break #超时一次
-        if( self.machine.available() ):
-            data = self.machine.read_str()
-            sender_addr = data[0] #获取接受方的地址
-            sender_payload = json.loads("{"+",".join(["\"{}\":\"{}\"".format(x.split(":")[0],x.split(":")[1]) for x in data.split(",")[1:]])+"}")
-            if(sender_addr == machineId[-1]): #接收方地址与实际发送地址相符合
-                return (True,sender_payload,)
-        print "Communicate to node failed!"
-        return (False,None)
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -166,7 +148,7 @@ class ApiHandler(tornado.web.RequestHandler):
             humidity = dhtSensors[deviceId].getHumidity()
             returnData["Type"] = "getHumidityResult"
             returnData["Content"]["humidity"] = humidity
-        # 下面是空调控制器
+        #空调控制器
         elif(typeVal == "getAcStatus"):
             status = airCondition1.getOnlineStatus()
             returnData["Type"] = "getAcStatusResult"
@@ -184,7 +166,7 @@ class ApiHandler(tornado.web.RequestHandler):
             status = airCondition1.setAcTemperature(temperature)
             returnData["Type"] = "setAcTemperatureResult"
             returnData["Content"]["result"] = status
-        #下面是电烙铁控制器
+        #电烙铁控制器
         elif(typeVal == "getElectricIronStatus"):
             status = electricIron1.getOnlineStatus()
             returnData["Type"] = "getElectricIronStatusResult"
@@ -201,6 +183,23 @@ class ApiHandler(tornado.web.RequestHandler):
             status = electricIron1.turnOffPower()
             returnData["Type"] = "turnOffElectricPowerResult"
             returnData["Content"]["result"] = status
+        #灯控制器
+        elif(typeVal == "getLightStatus"):
+            status = light1.getOnlineStatus()
+            returnData["Type"] = "getLightStatusResult"
+            returnData["Content"]["status"] = status
+        elif(typeVal == "getLightSwitchStatus"):
+            status = light1.getSwitchStatus()
+            returnData["Type"] = "getLightSwitchStatusResult"
+            returnData["Content"]["status"] = status
+        elif(typeVal == "turnOnLightPower"):
+            status = light1.turnOnPower()
+            returnData["Type"] = "turnOnLightPowerResult"
+            returnData["Content"]["result"] = status
+        elif(typeVal == "turnOffLightPower"):
+            status = light1.turnOffPower()
+            returnData["Type"] = "turnOffLightPowerResult"
+            returnData["Content"]["result"] = status
         self.write(json.dumps(returnData))
 
 
@@ -216,9 +215,10 @@ if __name__ == '__main__':
     myIOT = IOT("mac00") #创建Nrf服务器
     myIOT.setDaemon(True) #主线程退出后 该线程也会退出
     myIOT.start() #开始监听
-    dhtSensor1 = DHT_Sensor( IOT_Center = myIOT,machineId = "mac01" )
-    airCondition1 = AirconditionController( IOT_Center = myIOT,machineId = "mac02" )
-    electricIron1 = ElectricIron( IOT_Center = myIOT,machineId = "mac03" )
+    dhtSensor1 = DHT_Sensor(IOT_Center = myIOT, machineId = "mac01" )
+    airCondition1 = AirconditionController(IOT_Center = myIOT, machineId = "mac02" )
+    electricIron1 = ElectricIron(IOT_Center = myIOT, machineId = "mac03" )
+    light1 = Light(IOT_Center = myIOT, machineId = "mac0\x07")
     dhtSensors = [dhtSensor1,]
 
 

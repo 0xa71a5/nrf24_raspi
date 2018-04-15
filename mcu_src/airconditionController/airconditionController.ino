@@ -523,7 +523,7 @@ void setup()
   turnOffAC();
   
   char myaddr[5]="mac0";
-  Serial.begin(9600);
+  Serial.begin(250000);
   Serial.println("Begin config!");
   cePin = 8;
   csnPin = 9;

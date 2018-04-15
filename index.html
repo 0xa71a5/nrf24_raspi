@@ -98,6 +98,31 @@
                 result="通信失败"
             $("#turnOffElectricPowerResult").html(result);
         }
+        //下面是灯控制器的代码
+        else if(Type == "getLightStatusResult")
+        {
+            $("#lightStatus").html(Content["status"]);
+        }
+        else if(Type == "getLightSwitchStatusResult")
+        {
+            $("#lightSwitchStatus").html(Content["status"]);
+        }
+        else if (Type == "turnOnLightPowerResult" )
+        {
+            if(Content["result"] == "suc")
+                result="灯被打开"
+            else
+                result="通信失败"
+            $("#turnOnLightPowerResult").html(result);
+        }
+        else if (Type == "turnOffLightPowerResult" )
+        {
+            if(Content["result"] == "suc")
+                result="灯被关闭"
+            else
+                result="通信失败"
+            $("#turnOffLightPowerResult").html(result);
+        }
     }
 
     function getDhtStatus(){
@@ -208,6 +233,47 @@
         ws_send(JSON.stringify(package));  
     }
 
+//Light control
+    function getLightStatus()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'getLightStatus',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));
+    }
+
+    function getLightSwitchStatus()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'getLightSwitchStatus',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
+    function turnOnLightPower()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'turnOnLightPower',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
+    function turnOffLightPower()
+    {
+        var content = {'deviceId': '0' };
+        var package = {
+            'Type': 'turnOffLightPower',
+            'Content': content
+        }
+        ws_send(JSON.stringify(package));  
+    }
+
 
 </script>  
 
@@ -223,10 +289,16 @@
 <input type="text" name="acTemperature" id="acTemperature" value="27" />  <br><br>
 <button type="button"  onclick="turnOffAc()" />关闭空调 </button> <font id="turnOffAcResult"></font><br><br>
 <hr />
+
 <button type="button"  onclick="getElectricIronStatus()" />获取电烙铁控制器状态 </button> <font id="electricIronStatus"></font><br><br>
 <button type="button"  onclick="getElectricIronSwitchStatus()" />获取电烙铁物理开关状态 </button> <font id="electricIronSwitchStatus"></font><br><br>
 <button type="button"  onclick="turnOnElectricPower()" />允许使用电烙铁 </button> <font id="turnOnElectricPowerResult"></font><br><br>
 <button type="button"  onclick="turnOffElectricPower()" />禁止使用电烙铁 </button> <font id="turnOffElectricPowerResult"></font><br><br>
+<hr />
+<button type="button"  onclick="getLightStatus()" />获取灯控制器状态 </button> <font id="lightStatus"></font><br><br>
+<button type="button"  onclick="getLightSwitchStatus()" />获取灯开关状态 </button> <font id="lightSwitchStatus"></font><br><br>
+<button type="button"  onclick="turnOnLightPower()" />开灯</button> <font id="turnOnLightPowerResult"></font><br><br>
+<button type="button"  onclick="turnOffLightPower()" />关灯</button> <font id="turnOffLightPowerResult"></font><br><br>
 
 </body>
 </html>

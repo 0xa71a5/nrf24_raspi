@@ -1,3 +1,5 @@
+#include <Servo.h>
+Servo lightServo;
 #include <SPI.h>
 #include <stdlib.h>
 #define CONFIG      0x00
@@ -113,7 +115,7 @@ uint8_t csnPin=9;
 uint8_t channel=0;
 uint8_t payload=32;
 
-char myAddessByte = '3' ; 
+uint8_t myAddessByte = 0x07; 
 #define signalPin 2
 
 enum {
@@ -332,17 +334,23 @@ uint8_t getSwitchState()
 {
   return power_status;
 }
-
-void turnOnElectricIron()
+uint8_t ON_ANGLE = 60;
+uint8_t MIDDLE_ANGLE = 90;
+uint8_t OFF_ANGLE = 120;
+void turnOnLight()
 {
   power_status = POWER_ON;
-  digitalWrite(signalPin,1);
+  lightServo.write(ON_ANGLE);
+  delay(500);
+  lightServo.write(MIDDLE_ANGLE);
 }
 
-void turnOffElectricIron()
+void turnOffLight()
 {
   power_status = POWER_OFF;
-  digitalWrite(signalPin,0);
+  lightServo.write(OFF_ANGLE);
+  delay(500);
+  lightServo.write(MIDDLE_ANGLE);
 }
 
 
@@ -389,12 +397,25 @@ void parsePack(String type,String content,uint8_t senderId=0)
     nrf_send(packet.c_str());
      if(content=="on")
     {
-     turnOnElectricIron(); 
+     turnOnLight(); 
     }
     else
     {
-      turnOffElectricIron(); 
+      turnOffLight(); 
     }
+  }
+  else if(type == "angle" )
+  {
+    constructFormat(packet,"result","suc");
+    nrf_send(packet.c_str());
+    int index0 = content.indexOf('|');
+    String angleNum = content.substring(0, index0);
+    Serial.print(angleNum);Serial.print(",");
+    int index1 = content.indexOf('|', index0 + 1);
+    angleNum = content.substring(index0+1, index1);
+    Serial.print(angleNum);Serial.print(",");
+    angleNum = content.substring(index1+1);
+    Serial.println(angleNum);
   }
 }
 void handlePacket(String input)
@@ -434,7 +455,7 @@ void handlePacket(String input)
 void setup()
 {
   char myaddr[5]="mac0";
-  Serial.begin(9600);
+  Serial.begin(250000);
   Serial.println("Begin config!");
   cePin = 8;
   csnPin = 9;
@@ -446,8 +467,8 @@ void setup()
   payload = 32;
   nrf_config();
   Serial.println("Begining!");
-  pinMode(signalPin,OUTPUT);
-  turnOffElectricIron();
+  lightServo.attach(5);
+  turnOffLight();
 }
 
 char data[32];
