@@ -11,14 +11,14 @@ class nrf24:
         self.channel = 12 #通信频道
         #self.recv_payload = "\x00"*32 #接受缓冲区
         so = ctypes.cdll.LoadLibrary
-        self.clib = so("./nrf24.so") #这个so文件是树莓派3上的c共享库 其他操作系统需要另外编译
+        self.clib = so("cpp_src/nrf24.so") #这个so文件是树莓派3上的c共享库 其他操作系统需要另外编译
 
     def __init__(self,my_addr,channel):
         self.my_addr = my_addr
         self.channel = channel
         #self.recv_payload = "\x00"*32
         so = ctypes.cdll.LoadLibrary
-        self.clib = so("./nrf24.so")
+        self.clib = so("cpp_src/nrf24.so")
 
     def begin(self): #开启设定
         try:
