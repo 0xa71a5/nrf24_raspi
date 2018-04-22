@@ -74,18 +74,18 @@
             $("#turnOffAcResult").html(Content["result"]);
         }
         //下面是电烙铁控制器的代码
-        else if(Type == "getElectricIronStatusResult")
+        else if(Type == "getDoorlockStatusResult")
         {
-            $("#electricIronStatus").html(Content["status"]);
+            $("#doorlockStatus").html(Content["status"]);
         }
-        else if(Type == "getElectricIronSwitchStatusResult")
+        else if(Type == "getDoorlockSwitchStatusResult")
         {
-            $("#electricIronSwitchStatus").html(Content["status"]);
+            $("#doorlockSwitchStatus").html(Content["status"]);
         }
         else if (Type == "turnOnElectricPowerResult" )
         {
             if(Content["result"] == "suc")
-                result="允许电烙铁工作"
+                result="允许门锁工作"
             else
                 result="通信失败"
             $("#turnOnElectricPowerResult").html(result);
@@ -93,7 +93,7 @@
         else if (Type == "turnOffElectricPowerResult" )
         {
             if(Content["result"] == "suc")
-                result="禁止电烙铁工作"
+                result="禁止门锁工作"
             else
                 result="通信失败"
             $("#turnOffElectricPowerResult").html(result);
@@ -193,21 +193,21 @@
         ws_send(JSON.stringify(package));
     }
 
-    function getElectricIronStatus()
+    function getDoorlockStatus()
     {
         var content = {'deviceId': '0' };
         var package = {
-            'Type': 'getElectricIronStatus',
+            'Type': 'getDoorlockStatus',
             'Content': content
         }
         ws_send(JSON.stringify(package));
     }
 
-    function getElectricIronSwitchStatus()
+    function getDoorlockSwitchStatus()
     {
         var content = {'deviceId': '0' };
         var package = {
-            'Type': 'getElectricIronSwitchStatus',
+            'Type': 'getDoorlockSwitchStatus',
             'Content': content
         }
         ws_send(JSON.stringify(package));  
@@ -290,10 +290,10 @@
 <button type="button"  onclick="turnOffAc()" />关闭空调 </button> <font id="turnOffAcResult"></font><br><br>
 <hr />
 
-<button type="button"  onclick="getElectricIronStatus()" />获取电烙铁控制器状态 </button> <font id="electricIronStatus"></font><br><br>
-<button type="button"  onclick="getElectricIronSwitchStatus()" />获取电烙铁物理开关状态 </button> <font id="electricIronSwitchStatus"></font><br><br>
-<button type="button"  onclick="turnOnElectricPower()" />允许使用电烙铁 </button> <font id="turnOnElectricPowerResult"></font><br><br>
-<button type="button"  onclick="turnOffElectricPower()" />禁止使用电烙铁 </button> <font id="turnOffElectricPowerResult"></font><br><br>
+<button type="button"  onclick="getDoorlockStatus()" />获取门锁控制器状态 </button> <font id="doorlockStatus"></font><br><br>
+<button type="button"  onclick="getDoorlockSwitchStatus()" />获取门锁开关状态 </button> <font id="doorlockSwitchStatus"></font><br><br>
+<button type="button"  onclick="turnOnElectricPower()" />打开门锁 </button> <font id="turnOnElectricPowerResult"></font><br><br>
+<button type="button"  onclick="turnOffElectricPower()" />关闭门锁</button> <font id="turnOffElectricPowerResult"></font><br><br>
 <hr />
 <button type="button"  onclick="getLightStatus()" />获取灯控制器状态 </button> <font id="lightStatus"></font><br><br>
 <button type="button"  onclick="getLightSwitchStatus()" />获取灯开关状态 </button> <font id="lightSwitchStatus"></font><br><br>

@@ -1,43 +1,54 @@
 #include <lxc_nrf24l01.h>
-#include <Servo.h>
-Servo lightServo;
+char my_mac_addr = '3' ; 
 
-uint8_t power_status;
-uint8_t ON_ANGLE = 60;
-uint8_t MIDDLE_ANGLE = 90;
-uint8_t OFF_ANGLE = 120;
-
-uint8_t my_mac_addr = '4';
+uint32_t last_action_time = 0;
+#define signalPinA 3
+#define signalPinB 4
+#define LOCK_MOVE_TIME   180
+#define MIN_OPERATION_INTERVAL 1000
 
 enum {
   POWER_OFF = 0,
   POWER_ON = 1
-}POWER_STATUS;
+} POWER_STATUS;
+uint8_t power_status = POWER_OFF;
 
 uint8_t getSwitchState()
 {
   return power_status;
 }
 
-
-void turnOnLight()
+void turnOnDoorlock()
 {
   power_status = POWER_ON;
-  lightServo.write(ON_ANGLE);
-  delay(500);
-  lightServo.write(MIDDLE_ANGLE);
+  if (millis() - last_action_time < MIN_OPERATION_INTERVAL) {
+    last_action_time = millis();
+    return;
+  }
+  digitalWrite(signalPinA,1);
+  digitalWrite(signalPinB,0);
+  delay(LOCK_MOVE_TIME);
+  digitalWrite(signalPinA,0);
+  digitalWrite(signalPinB,0);
+  last_action_time = millis();
 }
 
-void turnOffLight()
+void turnOffDoorlock()
 {
   power_status = POWER_OFF;
-  lightServo.write(OFF_ANGLE);
-  delay(500);
-  lightServo.write(MIDDLE_ANGLE);
+  if (millis() - last_action_time < MIN_OPERATION_INTERVAL) {
+    last_action_time = millis();
+    return;
+  }
+  digitalWrite(signalPinA,0);
+  digitalWrite(signalPinB,1);
+  delay(LOCK_MOVE_TIME);
+  digitalWrite(signalPinA,0);
+  digitalWrite(signalPinB,0);
+  last_action_time = millis();
 }
 
-
-void light_functional_handler(String type,String content,uint8_t senderId=0)
+void dl_functional_handler(String type,String content,uint8_t senderId=0)
 {
   String packet;
   if (type == "get")//getVal1
@@ -49,7 +60,7 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
     }
     else if (content == "switchState")//开关状态
     {
-      String state = "";
+      String state="";
       if (getSwitchState() == POWER_ON)
       {
         state = "on";//开关被打开了
@@ -66,41 +77,30 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
   {
     construct_format(packet, "result", "suc");
     nrf_send(packet.c_str());
-     if(content == "on")
+    if (content == "on")
     {
-     turnOnLight(); 
+     turnOnDoorlock(); 
     }
     else
     {
-      turnOffLight(); 
+      turnOffDoorlock(); 
     }
-  }
-  else if (type == "angle" )
-  {
-    construct_format(packet, "result", "suc");
-    nrf_send(packet.c_str());
-    int index0 = content.indexOf('|');
-    String angleNum = content.substring(0, index0);
-    Serial.print(angleNum);Serial.print(",");
-    int index1 = content.indexOf('|', index0 + 1);
-    angleNum = content.substring(index0+1, index1);
-    Serial.print(angleNum);Serial.print(",");
-    angleNum = content.substring(index1+1);
-    Serial.println(angleNum);
   }
 }
 
 void device_init()
 {
-  lightServo.attach(5);
-  turnOffLight();
+  pinMode(signalPinA,OUTPUT);
+  pinMode(signalPinB,OUTPUT);
+  digitalWrite(signalPinA,0);
+  digitalWrite(signalPinB,0);
 }
 
 void setup()
 {
   Serial.begin(250000);
   Serial.println("Begin config!");
-  handle_func_register(light_functional_handler);
+  handle_func_register(dl_functional_handler);
   nrf_gpio_init(8, 9);
   set_tx_addr((uint8_t *)"mac00");
   set_mac_addr(&my_mac_addr);
@@ -109,6 +109,7 @@ void setup()
   device_init();
 }
 
+char data[32];
 void loop()
 {
    char data[32];

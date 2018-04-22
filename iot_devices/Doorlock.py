@@ -1,5 +1,5 @@
 #encoding=utf8
-class ElectricIron: #电烙铁控制器
+class Doorlock: #门禁控制器
     def __init__(self,IOT_Center,machineId):
         self.IOT = IOT_Center #获取通信接口
         self.machineId = machineId #获取本控制器的通信地址
