@@ -252,7 +252,7 @@ if __name__ == '__main__':
         ('/api', ApiHandler),
         ('/login', LoginHandler),
         ],cookie_secret = md5.md5(str(random.random())).digest(),
-        template_path=os.path.join(os.path.dirname(__file__), "templates"),
+        template_path=os.path.join(os.path.dirname(__file__), "html_templates"),
     )
     print "Running..."
     app.listen(80)
