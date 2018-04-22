@@ -12,8 +12,8 @@ static uint8_t channel = 0;
 static uint8_t payload = 32;
 
 static uint8_t spi_transfer(uint8_t data);
-static void spi_transfer_noexchange(uint8_t *dataout,uint8_t len);
-static void spi_transfer_exchange(uint8_t *dataout,uint8_t *datain,uint8_t len);
+static void spi_transfer_noexchange(uint8_t *dataout, uint8_t len);
+static void spi_transfer_exchange(uint8_t *dataout, uint8_t *datain, uint8_t len);
 static void config_register(uint8_t reg, uint8_t value);
 static void read_reg(uint8_t reg, uint8_t * value, uint8_t len);
 static void write_reg(uint8_t reg, uint8_t * value, uint8_t len);
@@ -32,17 +32,17 @@ uint8_t spi_transfer(uint8_t data)
 }
 
 /* This is a new test function for spi transfer */
-void spi_transfer_exchange(uint8_t *dataout,uint8_t *datain,uint8_t len){
+void spi_transfer_exchange(uint8_t *dataout, uint8_t *datain, uint8_t len){
         uint8_t i;
-        for (i = 0;i < len;i++){
+        for (i = 0; i < len; i++){
                 datain[i] = spi_transfer(dataout[i]);
         }
 }
 
 /* This is a new test function for spi transfer */
-void spi_transfer_noexchange(uint8_t *dataout,uint8_t len){
+void spi_transfer_noexchange(uint8_t *dataout, uint8_t len){
         uint8_t i;
-        for (i = 0;i < len;i++){
+        for (i = 0; i < len; i++){
             spi_transfer(dataout[i]);
         }
 }
@@ -51,8 +51,8 @@ void nrf_gpio_init(uint8_t ce_pin_num, uint8_t csn_pin_num)
 {
     ce_pin = ce_pin_num;
     csn_pin = csn_pin_num;
-    pinMode(ce_pin,OUTPUT);
-    pinMode(csn_pin,OUTPUT);
+    pinMode(ce_pin, OUTPUT);
+    pinMode(csn_pin, OUTPUT);
     ce_low();
     csn_high();
     SPI.begin();
@@ -63,7 +63,7 @@ void nrf_chip_config(uint8_t channel_num, uint8_t payload_num)
 {
     channel = channel_num;
     payload = payload_num;
-    config_register(RF_CH,channel);
+    config_register(RF_CH, channel);
     /* Set length of incoming payload */
     config_register(RX_PW_P0, payload);
     config_register(RX_PW_P1, payload);
@@ -110,23 +110,24 @@ void set_tx_addr(uint8_t * addr) /* Sets the transmitting address */
 bool data_ready() /* Checks if data is available for reading */
 {
     uint8_t status = get_status();
-    if (status & (1 << RX_DR)) return 1;
+    if (status & (1 << RX_DR))
+        return 1;
     return !rx_fifo_empty();
 }
 
 bool rx_fifo_empty(){
         uint8_t fifoStatus;
-        read_reg(FIFO_STATUS,&fifoStatus,sizeof(fifoStatus));
+        read_reg(FIFO_STATUS, &fifoStatus, sizeof(fifoStatus));
         return (fifoStatus & (1 << RX_EMPTY));
 }
 
 void get_data(uint8_t * data) /* Reads payload bytes into data array */
 {
     csn_low();
-    spi_transfer( R_RX_PAYLOAD );
-    spi_transfer_exchange(data,data,payload);
+    spi_transfer(R_RX_PAYLOAD);
+    spi_transfer_exchange(data, data, payload);
     csn_high();
-    config_register(STATUS,(1<<RX_DR)); /* Reset status register */
+    config_register(STATUS, (1 << RX_DR)); /* Reset status register */
 }
 
 void config_register(uint8_t reg, uint8_t value)
@@ -141,7 +142,7 @@ void read_reg(uint8_t reg, uint8_t * value, uint8_t len)
 {
     csn_low();
     spi_transfer(R_REGISTER | (REGISTER_MASK & reg));
-    spi_transfer_exchange(value,value,len);
+    spi_transfer_exchange(value, value, len);
     csn_high();
 }
 
@@ -149,7 +150,7 @@ void write_reg(uint8_t reg, uint8_t * value, uint8_t len)
 {
     csn_low();
     spi_transfer(W_REGISTER | (REGISTER_MASK & reg));
-    spi_transfer_noexchange(value,len);
+    spi_transfer_noexchange(value, len);
     csn_high();
 }
 
@@ -171,7 +172,7 @@ void nrf_send(uint8_t * value)
     csn_high();                    /* Pull up chip select */
     csn_low();                    /* Pull down chip select */
     spi_transfer( W_TX_PAYLOAD );
-    spi_transfer_noexchange(value,payload);   /* Write payload */
+    spi_transfer_noexchange(value, payload);   /* Write payload */
     csn_high();
     ce_high();
     while (is_sending());
@@ -191,16 +192,16 @@ bool is_sending(){
 
 uint8_t get_status(){
         uint8_t rv;
-        read_reg(STATUS,&rv,1);
+        read_reg(STATUS, &rv, 1);
         return rv;
 }
 
 void enable_rx(){
         transfer_mode = 0;
         ce_low();
-        config_register(CONFIG, CRC_CONFIG | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
+        config_register(CONFIG, CRC_CONFIG | ((1<<PWR_UP) | (1<<PRIM_RX)) );
         ce_high();
-        config_register(STATUS,(1 << TX_DS) | (1 << MAX_RT)); 
+        config_register(STATUS, (1 << TX_DS) | (1 << MAX_RT)); 
 }
 
 void flush_rx(){
@@ -210,57 +211,57 @@ void flush_rx(){
 }
 
 void enable_tx(){
-        transfer_mode = 1;
-        config_register(CONFIG, CRC_CONFIG | ( (1<<PWR_UP) | (0<<PRIM_RX) ) );
+    transfer_mode = 1;
+    config_register(CONFIG, CRC_CONFIG | ((1 << PWR_UP) | (0 << PRIM_RX)));
 }
 
 void ce_high(){
-        digitalWrite(ce_pin,HIGH);
+    digitalWrite(ce_pin, HIGH);
 }
 
 void ce_low(){
-        digitalWrite(ce_pin,LOW);
+    digitalWrite(ce_pin, LOW);
 }
 
 void csn_high(){
-        digitalWrite(csn_pin,HIGH);
+    digitalWrite(csn_pin, HIGH);
 }
 
 void csn_low(){
-        digitalWrite(csn_pin,LOW);
+    digitalWrite(csn_pin, LOW);
 }
 
 void power_down(){
-        ce_low();
-        config_register(CONFIG, CRC_CONFIG );
+    ce_low();
+    config_register(CONFIG, CRC_CONFIG);
 }
 
-static void default_functional_handle(String type,String content,uint8_t senderId=0)
+static void default_functional_handle(String type, String content, uint8_t senderId = 0)
 {
 }
 
-static void (* functional_handle)(String type,String content,uint8_t senderId) = default_functional_handle;
+static void (* functional_handle)(String type, String content, uint8_t senderId) = default_functional_handle;
 
 void handle_func_register(void * func)
 {
     functional_handle = func;
 }
 
-void construct_format(String &raw,String type,String value)
+void construct_format(String &raw, String type, String value)
 {
-    if(raw.length()==0)
+    if (raw.length() == 0)
     {
-      char temp[2]={0x00,0x00};
+      char temp[2] = {0x00, 0x00};
       temp[0] = mac_addr[0];
       raw += temp;
     }
-    raw += ","+type+":"+value;
+    raw += ","+type+":" + value;
 }
 
 void handle_packet(String input)
 {
   if (input.length() < 3) return;
-  uint8_t sendId = input[0];
+  uint8_t send_id = input[0];
   String type,content;
   uint8_t state = 0;
   for (int i = 2; i < input.length(); i ++)
@@ -273,7 +274,7 @@ void handle_packet(String input)
     else if (cur == ',')
     {
       state = 0;
-      functional_handle(type,content,sendId);
+      functional_handle(type,content,send_id);
       type = "";
       content = "";
     }
@@ -289,5 +290,5 @@ void handle_packet(String input)
       }
     }
   }
-  functional_handle(type,content,sendId);
+  functional_handle(type, content, send_id);
 }
