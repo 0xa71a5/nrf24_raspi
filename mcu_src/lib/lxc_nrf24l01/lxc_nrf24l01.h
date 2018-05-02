@@ -83,23 +83,42 @@
 
 #define CRC_CONFIG ((1<<EN_CRC) | (0<<CRCO) )
 
+#define TX_REACH_DST 0
+#define TX_TIMEOUT   1
+#define TX_SENDING   2
+
+uint8_t spi_transfer(uint8_t data);
+void spi_transfer_noexchange(uint8_t *dataout,uint8_t len);
+void spi_transfer_exchange(uint8_t *dataout,uint8_t *datain,uint8_t len);
+void config_register(uint8_t reg, uint8_t value);
+void read_reg(uint8_t reg, uint8_t * value, uint8_t len);
+void write_reg(uint8_t reg, uint8_t * value, uint8_t len);
+void enable_rx(void);
+void enable_tx(void);
+void power_down(void);
+void csn_high(void);
+void csn_low(void);
+void ce_high(void);
+void ce_low(void);
+void flush_rx(void);
+
 void construct_format(String &raw,String type,String value);
 void handle_func_register(void * func);
 void handle_packet(String input);
 void nrf_gpio_init(uint8_t ce_pin, uint8_t csn_pin);
 void nrf_chip_config(uint8_t channel, uint8_t payload);
-void nrf_send(uint8_t * value);
+uint8_t nrf_send(uint8_t * value);
 void set_group_addr(uint8_t * group_addr_ptr);
 void set_mac_addr(uint8_t * mac_addr_ptr);
 void set_net_addr();
 void set_rx_addr(uint8_t * addr);
 void set_tx_addr(uint8_t * addr);
 bool data_ready();
-bool is_sending();
-bool rx_fifo_empty();
-bool tx_fifo_empty();
+uint8_t get_sending_status(void);
+bool rx_fifo_empty(void);
+bool tx_fifo_empty(void);
 void get_data(uint8_t * data);
-uint8_t get_status();
+uint8_t get_status(void);
 
 
 #endif
