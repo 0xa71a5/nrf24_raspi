@@ -52,8 +52,8 @@ void loop()
    if (tx_status != TX_REACH_DST)
       printf("Send failed with too many retries\n");
 
-   if(loop_time ++ % 10 == 0)
-      delay(random(1000));
+   if(loop_time ++ % 20 == 0)
+      delay(random(100));
 
    if (nrf_data_ready()) {
       nrf_get_data(data);
