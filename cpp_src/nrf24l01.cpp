@@ -27,7 +27,8 @@ void nrf_config()
     // Set length of incoming payload 
     configRegister(RX_PW_P0, payload);
     configRegister(RX_PW_P1, payload);
-    configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
+    //configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
+    configRegister(EN_AA, 0x3f);
     // Start receiver 
     powerUpRx();
     flushRx();
