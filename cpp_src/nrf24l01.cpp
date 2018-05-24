@@ -11,6 +11,8 @@ uint8_t PTX=0;
 uint8_t channel=0;
 uint8_t payload=32;
 
+#define debug_printf(...)
+//#define debug_printf(...) printf( __VA_ARGS__)
 
 void nrf_init() 
 {   
@@ -27,40 +29,89 @@ void nrf_config()
     // Set length of incoming payload 
     configRegister(RX_PW_P0, payload);
     configRegister(RX_PW_P1, payload);
+    configRegister(RX_PW_P2, payload);
     //configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
-    configRegister(EN_AA, 0x3f);
+    configRegister(EN_AA, 0x00);/* Enable pipe0 and pipe1 auto ack*/
+    configRegister(EN_RXADDR, 0x03);/* Enable pipe0 1 2 rx */
+
     // Start receiver 
     powerUpRx();
     flushRx();
 }
 
-void setRADDR(uint8_t * adr) // Sets the receiving address
+void nrf_set_broadcast_addr(uint8_t addr)
 {
-        ceLow();
-        writeRegister(RX_ADDR_P1,adr,5);
-        ceHi();
+  configRegister(RX_ADDR_P2, addr);
 }
 
-void setTADDR(uint8_t * adr) // Sets the transmitting address
+void nrf_set_retry_times(uint8_t max_retry_times)
 {
-    writeRegister(RX_ADDR_P0,adr,5);
-    writeRegister(TX_ADDR,adr,5);
+    uint8_t rety_reg = 0x00;
+
+    readRegister(SETUP_RETR, &rety_reg, 1);
+    rety_reg = (rety_reg & 0xf0) | (0x0f & max_retry_times);
+    configRegister(SETUP_RETR, rety_reg);
 }
 
-extern bool dataReady() // Checks if data is available for reading
+void nrf_set_retry_durtion(uint32_t micro_senconds)
+{
+    uint8_t rety_reg = 0x00;
+
+    if (micro_senconds > 4000)
+        micro_senconds = 4000;
+    else if (micro_senconds == 0)
+        micro_senconds = 1;
+
+    micro_senconds --;
+    micro_senconds /= 250;
+
+    readRegister(SETUP_RETR, &rety_reg, 1);
+    rety_reg = (rety_reg & 0x0f) | ((uint8_t)micro_senconds << 4);
+    configRegister(SETUP_RETR, rety_reg);
+}
+
+void setRADDR(uint8_t * addr) // Sets the receiving address
+{
+    uint8_t reverse_addr[5];
+    debug_printf("setRADDR=[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", 
+        addr[0], addr[1], addr[2], addr[3], addr[4]);
+    /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
+    for (int i = 0; i < 5; i ++) {
+        reverse_addr[i] = addr[5-i-1];
+    }
+
+    ceLow();
+    writeRegister(RX_ADDR_P1, reverse_addr, 5);
+    ceHi();
+}
+
+void setTADDR(uint8_t * addr) // Sets the transmitting address
+{
+    uint8_t reverse_addr[5];
+    /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
+    for (uint8_t i = 0; i < 5; i ++) {
+        reverse_addr[i] = addr[5-i-1];
+    }
+    writeRegister(RX_ADDR_P0, reverse_addr, 5);
+    writeRegister(TX_ADDR, reverse_addr, 5);
+    debug_printf("setTADDR=[%c %c %c %c %c]\n",
+        addr[0], addr[1], addr[2], addr[3], addr[4]);
+}
+
+bool dataReady() // Checks if data is available for reading
 {
     uint8_t status = getStatus();
     if ( status & (1 << RX_DR) ) return 1;
     return !rxFifoEmpty();
 }
 
-extern bool rxFifoEmpty(){
-        uint8_t fifoStatus;
-        readRegister(FIFO_STATUS,&fifoStatus,sizeof(fifoStatus));
-        return (fifoStatus & (1 << RX_EMPTY));
+bool rxFifoEmpty(){
+    uint8_t fifoStatus;
+    readRegister(FIFO_STATUS,&fifoStatus,sizeof(fifoStatus));
+    return (fifoStatus & (1 << RX_EMPTY));
 }
 
-extern void getData(uint8_t * data) // Reads payload bytes into data array
+void getData(uint8_t * data) // Reads payload bytes into data array
 {
     uint8_t *temp_buffer = (uint8_t *)malloc(payload+1);
     memset(temp_buffer,0,payload+1);
@@ -69,6 +120,7 @@ extern void getData(uint8_t * data) // Reads payload bytes into data array
     memcpy(data,temp_buffer+1,payload);
     configRegister(STATUS,(1<<RX_DR));   // Reset status register
     free(temp_buffer);
+    debug_printf("getData=[%s]\n", data);
 }
 
 void configRegister(uint8_t reg, uint8_t value)
@@ -124,6 +176,7 @@ void nrf_send(uint8_t * value) // Sends a data package to the default address. B
 
     ceHi();                     // Start transmission
     while(isSending());
+    debug_printf("nrf_send payload=[%s]\n", value);
 }
 bool isSending(){
         uint8_t status;
@@ -156,9 +209,6 @@ void powerUpRx(){
 }
 
 void flushRx(){
-    //csnLow();
-    //spi_transfer(FLUSH_RX);
-    //csnHi();
     uint8_t temp = FLUSH_RX;
     wiringPiSPIDataRW(SPI_CHANNEL,&temp,1);
 }
@@ -213,6 +263,7 @@ extern "C"{
   void nrf24_tx_addr(uint8_t *target_addr)
   {
     setTADDR(target_addr);
+
   }
 
   void nrf24_send(uint8_t *data)

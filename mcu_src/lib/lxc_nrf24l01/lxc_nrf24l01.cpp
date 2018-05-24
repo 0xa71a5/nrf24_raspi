@@ -45,6 +45,11 @@ void nrf_gpio_init(uint8_t ce_pin_num, uint8_t csn_pin_num)
     SPI.begin();
 }
 
+void nrf_set_broadcast_addr(uint8_t addr)
+{
+  config_register(RX_ADDR_P2, addr);
+}
+
 
 void nrf_chip_config(uint8_t channel_num, uint8_t payload_num)
 {
@@ -54,14 +59,41 @@ void nrf_chip_config(uint8_t channel_num, uint8_t payload_num)
     /* Set length of incoming payload */
     config_register(RX_PW_P0, payload);
     config_register(RX_PW_P1, payload);
+    config_register(RX_PW_P2, payload);
     //config_register(EN_AA, 0x00);/* Disable shockburst mode:auto ack */
-    config_register(EN_AA, 0x3f);
-
+    config_register(EN_AA, 0x00);/* Enable pipe0 and pipe1 auto ack*/
+    //config_register(EN_RXADDR, 0x03);/* Enable pipe0 1 2 rx */
+    config_register(EN_RXADDR, 0x02);/* Enable pipe0 1 2 rx */
     /* Start receiver */
     enable_rx();
     flush_rx();
 }
 
+void nrf_set_retry_times(uint8_t max_retry_times)
+{
+    uint8_t rety_reg = 0x00;
+
+    read_reg(SETUP_RETR, &rety_reg, 1);
+    rety_reg = (rety_reg & 0xf0) | (0x0f & max_retry_times);
+    config_register(SETUP_RETR, rety_reg);
+}
+
+void nrf_set_retry_durtion(uint32_t micro_senconds)
+{
+    uint8_t rety_reg = 0x00;
+
+    if (micro_senconds > 4000)
+        micro_senconds = 4000;
+    else if (micro_senconds == 0)
+        micro_senconds = 1;
+
+    micro_senconds --;
+    micro_senconds /= 250;
+
+    read_reg(SETUP_RETR, &rety_reg, 1);
+    rety_reg = (rety_reg & 0x0f) | ((uint8_t)micro_senconds << 4);
+    config_register(SETUP_RETR, rety_reg);
+}
 
 void set_group_addr(uint8_t *group_addr_ptr)
 {
@@ -84,16 +116,27 @@ void set_net_addr()
 
 void set_rx_addr(uint8_t * addr) /* Sets the receiving address */
 {
+    uint8_t reverse_addr[NET_ADDR_LENGTH];
+
+    /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
+    for (int i = 0; i < NET_ADDR_LENGTH; i ++) {
+        reverse_addr[i] = addr[NET_ADDR_LENGTH-i-1];
+    }
+
     ce_low();
-    write_reg(RX_ADDR_P1, addr, NET_ADDR_LENGTH);
+    write_reg(RX_ADDR_P1, reverse_addr, NET_ADDR_LENGTH);
     ce_high();
 }
 
 void set_tx_addr(uint8_t * addr) /* Sets the transmitting address */
 {
+    uint8_t reverse_addr[NET_ADDR_LENGTH];
     /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
-    write_reg(RX_ADDR_P0,addr, NET_ADDR_LENGTH);
-    write_reg(TX_ADDR,addr, NET_ADDR_LENGTH);
+    for (uint8_t i = 0; i < NET_ADDR_LENGTH; i ++) {
+        reverse_addr[i] = addr[NET_ADDR_LENGTH-i-1];
+    }
+    write_reg(RX_ADDR_P0, reverse_addr, NET_ADDR_LENGTH);
+    write_reg(TX_ADDR, reverse_addr, NET_ADDR_LENGTH);
 }
 
 bool data_ready() /* Checks if data is available for reading */

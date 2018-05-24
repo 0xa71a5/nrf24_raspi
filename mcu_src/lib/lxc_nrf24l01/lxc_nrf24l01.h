@@ -119,6 +119,9 @@ bool rx_fifo_empty(void);
 bool tx_fifo_empty(void);
 void get_data(uint8_t * data);
 uint8_t get_status(void);
+void nrf_set_broadcast_addr(uint8_t addr);
+void nrf_set_retry_times(uint8_t max_retry_times);
+void nrf_set_retry_durtion(uint32_t micro_senconds);
 
 
 #endif

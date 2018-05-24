@@ -41,6 +41,7 @@ class nrf24:
     def send_to(self,message,target_addr): #指定发送地址发送给对方
         self.set_target_addr(target_addr)
         self.send(message)
+        print("send_to target=[{}] payload=[{}]".format(target_addr, message))
 
     def available(self): #检测接受缓冲区是否有数据 如果有数据返回True
         if( self.clib.nrf24_available() != 0 ):

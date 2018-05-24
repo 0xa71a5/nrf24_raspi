@@ -9,10 +9,17 @@ class DHT_Sensor: #温湿度传感器
         return data["status"] if(result) else "offline" #如果获取到通信结果  那么返回当前状态
 
     def getHumidity(self): #获取传感器的湿度数值
-        result,data = self.IOT.communicateToNode(self.machineId,"get","humidity")
-        return data["humidity"] if(result) else ""   
+        try:
+            result,data = self.IOT.communicateToNode(self.machineId,"get","humidity")
+            return data["humidity"] if(result) else ""   
+        except:
+            print("err@getTemperature, recv result={} data=[{}]".format(result, data))
+            return ""
 
     def getTemperature(self):
         result,data = self.IOT.communicateToNode(self.machineId,"get","temperature")
-        return data["temperature"] if(result) else ""
-
+        try:
+            return data["temperature"] if(result) else ""
+        except:
+            print("err@getTemperature, recv result={} data=[{}]".format(result, data))
+            return ""

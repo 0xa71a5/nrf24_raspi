@@ -108,6 +108,9 @@ void flushRx();
 uint8_t spi_transfer(uint8_t data);
 void setChannel(int channel);
 void setPayloadLength(int length);
+void nrf_set_retry_times(uint8_t max_retry_times);
+void nrf_set_retry_durtion(uint32_t micro_senconds);
+void nrf_set_broadcast_addr(uint8_t addr);
 
 
 

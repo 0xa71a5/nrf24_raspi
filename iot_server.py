@@ -35,7 +35,7 @@ class IOT(threading.Thread):
         self.rx_queue = {} #弃用defaultdict(Queue.Queue) #接收数据缓冲区 发送方地址作为索引 以默认队列形式存储收到的数据
         self.rx_queue_buffersize = 1000 #设定每个接受地址的最大缓冲是1000
         self.rx_addr_prefix = "mac0" #接收地址的前4位相同
-        self.machine = lxc_nrf24.nrf24(my_addr = my_addr,channel = 12)
+        self.machine = lxc_nrf24.nrf24(my_addr = my_addr, channel = 12)
         self.machine.begin()
         self.flushHardwareRxBuffer()
         #while( self.machine.available() ): recv = self.machine.read_str() #Flush RX buffer
@@ -51,15 +51,17 @@ class IOT(threading.Thread):
             self.rwlock.acquire()
             if (self.machine.available()):
                 data = self.machine.read_str()
+                self.rwlock.release() #释放读写锁
                 try:
                     sender_addr = self.rx_addr_prefix + data[0] #获取接受方的地址
-                    sender_payload = json.loads("{"+",".join(["\"{}\":\"{}\"".format(x.split(":")[0],x.split(":")[1]) for x in data.split(",")[1:]])+"}")
+                    payload = json.loads("{"+",".join(["\"{}\":\"{}\"".format(x.split(":")[0],x.split(":")[1]) for x in data.split(",")[1:]])+"}")
                     try:
-                        self.rx_queue[sender_addr].put_nowait(sender_payload) #将接受到的数据放入到缓存队列中
+                        self.rx_queue[sender_addr].put_nowait(payload) #将接受到的数据放入到缓存队列中
+                        logging.debug("Recv from {},payload=[{}]".format(sender_addr, payload))
                     except KeyError: #键值不存在
                         logging.debug("Allocate new buffer for new address '{}'".format(sender_addr))
                         self.rx_queue[sender_addr] = Queue.Queue(self.rx_queue_buffersize)
-                        self.rx_queue[sender_addr].put_nowait(sender_payload) #将接受到的数据放入到缓存队列中
+                        self.rx_queue[sender_addr].put_nowait(payload) #将接受到的数据放入到缓存队列中
                     except Queue.Full: #缓冲满
                         logging.debug("Rx buffer full,rx addr '{}'".format(sender_addr))
                         #直接丢弃...
@@ -68,8 +70,7 @@ class IOT(threading.Thread):
             else:
                 self.rwlock.release() #释放读写锁
                 time.sleep(0.05) #给其他操作空出获取锁的时间
-                continue #避免二次释放读写锁
-            self.rwlock.release() #释放读写锁
+            
 
     def flushHardwareRxBuffer(self): #刷新硬件接收寄存器缓存
         self.rwlock.acquire()
@@ -88,10 +89,13 @@ class IOT(threading.Thread):
         toSendPacket = "{},{}:{}".format(machineId,typeVal,contentVal)
         returnTest = False
         returnResult = None
+        logging.debug("\n\ntoSendPacket =[{}]".format(toSendPacket))
         try:
             if (machineId in self.rx_queue): #首先判断当前接收缓冲区是否有该id
+                #logging.debug("{} is in rx_queue,flush it".format(machineId))
                 self.flushRxBuffer(machineId) #一次性清空之前接受到的数据 只是为了在本次发射之后收到数据  这种方式适用于 req&rep模式
             else:
+                logging.debug("{} is not in rx_queue,create it".format(machineId))
                 self.rx_queue[machineId] = Queue.Queue(self.rx_queue_buffersize) #开辟缓冲区
             check_point = time.time() #记录出发时间
             timeout = 0 
@@ -104,8 +108,10 @@ class IOT(threading.Thread):
                     if (time.time() - check_point > self.send_wait_time): #10ms一次发射周期
                         timeout += 1
                         break
-            if( self.rx_queue[machineId].qsize()!=0): #接受到了返回的数据
+            logging.debug("sent packet retry time={}".format(timeout))
+            if(self.rx_queue[machineId].qsize() != 0): #接受到了返回的数据
                 returnResult = self.rx_queue[machineId].get()
+                logging.debug("get response =[{}]\n".format(returnResult))
                 returnTest = True
             else:
                 logging.warning("Communicate to node '{}' failed".format(machineId))
@@ -232,7 +238,7 @@ if __name__ == '__main__':
     global myIOT
     global dhtSensors
     global airCondition1
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(filename)s[%(lineno)d] %(message)s",
                     datefmt='%Y/%m/%d %H:%M:%S',
                     #filename='_server_.log',filemode='a'
@@ -251,7 +257,7 @@ if __name__ == '__main__':
         ('/', IndexHandler),
         ('/api', ApiHandler),
         ('/login', LoginHandler),
-        ],cookie_secret = md5.md5(str(random.random())).digest(),
+        ],cookie_secret = "123", #md5.md5(str(random.random())).digest(),
         template_path=os.path.join(os.path.dirname(__file__), "html_templates"),
     )
     print "Running..."
