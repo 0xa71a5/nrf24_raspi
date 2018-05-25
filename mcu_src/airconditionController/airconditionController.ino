@@ -1,6 +1,7 @@
 #include <lxc_nrf24l01.h>
 
 char my_mac_addr = '2' ; 
+#define PWM_PIN 5
 
 #define TIMER_DISABLE_INTR  (TIMSK2 = 0)
 #define SYSCLOCK  16000000 
@@ -103,7 +104,7 @@ void _turnOnAC()
 
 void turnOnAC()
 {
-
+  analogWrite(PWM_PIN, 127);
 }
 
 void _turnOffAC()
@@ -113,12 +114,18 @@ void _turnOffAC()
 
 void turnOffAC()
 {
-
+  analogWrite(PWM_PIN, 0);
 }
 
-void setTemperature(int t)
+void setTemperature(uint32_t t)
 {
+  if (t > 30)
+    t = 30;
+  if (t < 16)
+    t = 16;
 
+  t = (t - 16) * 255 / (30 - 16);
+  analogWrite(PWM_PIN, t);
 }
 
 void _setTemperature(int t)
@@ -173,6 +180,8 @@ void device_init()
   delay(600);
   turnOffAC();
   */
+  //pinMode(LED_PIN, OUTPUT);
+  turnOffAC();
 }
 
 void setup()
@@ -185,21 +194,15 @@ void setup()
   my_mac_addr = '2' ; 
   set_mac_addr(&my_mac_addr);
   nrf_chip_config(12, 32);
-  Serial.println("Begining!");
+  Serial.println("Device ac is running!");
   device_init();
-
 }
-uint8_t pipe=23;
 
 void loop()
 {
    char data[32];
    if (data_ready()){
       get_data(data);
-      read_reg(0x07, &pipe, 1);
-      pipe = (pipe >> 1) & 0x07;
-      Serial.print("Pipe ");
-      Serial.print(pipe);
       Serial.print(" Got packet->");
       Serial.println(data);
       String str_data = data;

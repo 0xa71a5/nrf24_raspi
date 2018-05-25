@@ -1,4 +1,5 @@
 #include <lxc_nrf24l01.h>
+#include <Servo.h>
 char my_mac_addr = '3' ; 
 
 uint32_t last_action_time = 0;
@@ -6,6 +7,12 @@ uint32_t last_action_time = 0;
 #define signalPinB 4
 #define LOCK_MOVE_TIME   180
 #define MIN_OPERATION_INTERVAL 1000
+
+//#define LOCK_TYPE_MOTOR
+#define LOCK_TYPE_RELAY
+
+
+Servo lockServo;
 
 enum {
   POWER_OFF = 0,
@@ -25,11 +32,15 @@ void turnOnDoorlock()
     last_action_time = millis();
     return;
   }
-  digitalWrite(signalPinA,1);
-  digitalWrite(signalPinB,0);
-  delay(LOCK_MOVE_TIME);
-  digitalWrite(signalPinA,0);
-  digitalWrite(signalPinB,0);
+  #ifdef LOCK_TYPE_MOTOR
+    digitalWrite(signalPinA,1);
+    digitalWrite(signalPinB,0);
+    delay(LOCK_MOVE_TIME);
+    digitalWrite(signalPinA,0);
+    digitalWrite(signalPinB,0);
+  #else
+    lockServo.write(60);
+  #endif
   last_action_time = millis();
 }
 
@@ -40,11 +51,16 @@ void turnOffDoorlock()
     last_action_time = millis();
     return;
   }
-  digitalWrite(signalPinA,0);
-  digitalWrite(signalPinB,1);
-  delay(LOCK_MOVE_TIME);
-  digitalWrite(signalPinA,0);
-  digitalWrite(signalPinB,0);
+
+  #ifdef LOCK_TYPE_MOTOR
+    digitalWrite(signalPinA,0);
+    digitalWrite(signalPinB,1);
+    delay(LOCK_MOVE_TIME);
+    digitalWrite(signalPinA,0);
+    digitalWrite(signalPinB,0); 
+  #else
+    lockServo.write(120);
+  #endif
   last_action_time = millis();
 }
 
@@ -90,10 +106,15 @@ void dl_functional_handler(String type,String content,uint8_t senderId=0)
 
 void device_init()
 {
+  #ifdef LOCK_TYPE_MOTOR
   pinMode(signalPinA,OUTPUT);
   pinMode(signalPinB,OUTPUT);
   digitalWrite(signalPinA,0);
   digitalWrite(signalPinB,0);
+  #else
+  lockServo.attach(4);
+  turnOffDoorlock();
+  #endif
 }
 
 void setup()
@@ -106,7 +127,7 @@ void setup()
   my_mac_addr = '3' ; 
   set_mac_addr(&my_mac_addr);
   nrf_chip_config(12, 32);
-  Serial.println("Begining!");
+  Serial.println("Device doorlock is running!");
   device_init();
 }
 

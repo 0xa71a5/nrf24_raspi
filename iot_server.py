@@ -6,8 +6,9 @@ import os
 import lxc_nrf24
 from iot_devices.DHT_Sensor             import *
 from iot_devices.AirconditionController import *
-from iot_devices.Doorlock           import *
+from iot_devices.Doorlock               import *
 from iot_devices.Light                  import *
+from iot_devices.Router                 import *
 from collections import defaultdict
 import Queue
 import random
@@ -197,7 +198,7 @@ class ApiHandler(tornado.web.RequestHandler):
             status = airCondition1.setAcTemperature(temperature)
             returnData["Type"] = "setAcTemperatureResult"
             returnData["Content"]["result"] = status
-        #电烙铁控制器
+        #doorlock控制器
         elif(typeVal == "getDoorlockStatus"):
             status = doorlock1.getOnlineStatus()
             returnData["Type"] = "getDoorlockStatusResult"
@@ -216,21 +217,41 @@ class ApiHandler(tornado.web.RequestHandler):
             returnData["Content"]["result"] = status
         #灯控制器
         elif(typeVal == "getLightStatus"):
-            status = light1.getOnlineStatus()
-            returnData["Type"] = "getLightStatusResult"
-            returnData["Content"]["status"] = status
+            if (router1.getOnlineStatus() == "online"):
+                status = light1.getOnlineStatus()
+                returnData["Type"] = "getLightStatusResult"
+                returnData["Content"]["status"] = status
+            else:
+                status = "offline"
+                returnData["Type"] = "getLightStatusResult"
+                returnData["Content"]["status"] = status
         elif(typeVal == "getLightSwitchStatus"):
-            status = light1.getSwitchStatus()
-            returnData["Type"] = "getLightSwitchStatusResult"
-            returnData["Content"]["status"] = status
+            if (router1.getOnlineStatus() == "online"):
+                status = light1.getSwitchStatus()
+                returnData["Type"] = "getLightSwitchStatusResult"
+                returnData["Content"]["status"] = status
+            else:
+                status = ""
+                returnData["Type"] = "getLightSwitchStatusResult"
+                returnData["Content"]["status"] = status
         elif(typeVal == "turnOnLightPower"):
-            status = light1.turnOnPower()
-            returnData["Type"] = "turnOnLightPowerResult"
-            returnData["Content"]["result"] = status
+            if (router1.getOnlineStatus() == "online"):
+                status = light1.turnOnPower()
+                returnData["Type"] = "turnOnLightPowerResult"
+                returnData["Content"]["result"] = status
+            else:
+                status = ""
+                returnData["Type"] = "turnOnLightPowerResult"
+                returnData["Content"]["result"] = status
         elif(typeVal == "turnOffLightPower"):
-            status = light1.turnOffPower()
-            returnData["Type"] = "turnOffLightPowerResult"
-            returnData["Content"]["result"] = status
+            if (router1.getOnlineStatus() == "online"):
+                status = light1.turnOffPower()
+                returnData["Type"] = "turnOffLightPowerResult"
+                returnData["Content"]["result"] = status
+            else:
+                status = ""
+                returnData["Type"] = "turnOffLightPowerResult"
+                returnData["Content"]["result"] = status
         self.write(json.dumps(returnData))
 
 
@@ -251,6 +272,7 @@ if __name__ == '__main__':
     airCondition1 = AirconditionController(IOT_Center = myIOT, machineId = "mac02" )
     doorlock1 = Doorlock(IOT_Center = myIOT, machineId = "mac03" )
     light1 = Light(IOT_Center = myIOT, machineId = "mac04")
+    router1 = Router(IOT_Center = myIOT, machineId = "mac0r")
     dhtSensors = [dhtSensor1,]
 
     app = tornado.web.Application([

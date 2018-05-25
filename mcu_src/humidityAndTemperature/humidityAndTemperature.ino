@@ -51,8 +51,8 @@ void setup()
   nrf_set_retry_times(3);
   nrf_set_retry_durtion(1250);
   nrf_chip_config(12, 32);
-  Serial.println("Begining!");
-  enable_rx();
+  device_init();
+  Serial.println("Device dht is running!");
 }
 
 char data[32];
@@ -66,7 +66,5 @@ void loop()
       Serial.println(data);
       String str_data = data;
       handle_packet(str_data);
-
-      Serial.println("Handle packet done!\n");
   }
 }

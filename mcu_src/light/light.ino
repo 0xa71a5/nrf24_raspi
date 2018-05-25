@@ -1,7 +1,7 @@
 #include <lxc_nrf24l01.h>
 #include <Servo.h>
 Servo lightServo;
-
+#define LED 4
 uint8_t power_status;
 uint8_t ON_ANGLE = 60;
 uint8_t MIDDLE_ANGLE = 90;
@@ -22,18 +22,24 @@ uint8_t getSwitchState()
 
 void turnOnLight()
 {
+  digitalWrite(LED, 1);
   power_status = POWER_ON;
+  /*
   lightServo.write(ON_ANGLE);
   delay(500);
   lightServo.write(MIDDLE_ANGLE);
+  */
 }
 
 void turnOffLight()
 {
+  digitalWrite(LED, 0);
   power_status = POWER_OFF;
+  /*
   lightServo.write(OFF_ANGLE);
   delay(500);
   lightServo.write(MIDDLE_ANGLE);
+  */
 }
 
 
@@ -92,7 +98,8 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
 
 void device_init()
 {
-  lightServo.attach(5);
+  //lightServo.attach(5);
+  pinMode(LED, OUTPUT);
   turnOffLight();
 }
 
@@ -106,7 +113,7 @@ void setup()
   my_mac_addr = '4';
   set_mac_addr(&my_mac_addr);
   nrf_chip_config(12, 32);
-  Serial.println("Begining!");
+  Serial.println("Device light is running!");
   device_init();
 }
 
