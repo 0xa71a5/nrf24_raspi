@@ -18,7 +18,7 @@ class AirconditionController: #空调控制器
 
     def setAcTemperature(self,temperature): #设定空调温度
         temperature = int(temperature)
-        if(temperature<16): temperature = 16
+        if(temperature<0): temperature = 0
         if(temperature>30): temperature = 30
         result,data = self.IOT.communicateToNode(self.machineId,"changeAcTemp",str(temperature))
         return data["changeAcTempResult"] if(result) else ""  

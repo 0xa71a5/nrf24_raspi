@@ -14,21 +14,21 @@ void dhtsensor_functional_handler(String type,String content,uint8_t senderId=0)
     if (content == "status")
     {
       construct_format(packet, "status", "online");
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
     else if (content == "humidity")//time and val1
     {
       DHT.read11(DHT11_PIN);
       int humidityVal = DHT.humidity;
       construct_format(packet, "humidity", String(humidityVal));
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
     else if (content == "temperature")
     {
       DHT.read11(DHT11_PIN);
       int temperatureVal = DHT.temperature;
       construct_format(packet, "temperature", String(temperatureVal));
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
   }
 }
@@ -52,17 +52,17 @@ void setup()
   nrf_set_retry_durtion(1250);
   nrf_chip_config(12, 32);
   device_init();
+  zigbee_network_init(ZIGBEE_END_DEVICE);
   Serial.println("Device dht is running!");
 }
 
-char data[32];
 
 void loop()
 {
-   if (data_ready()) {
-      memset(data, 0, 32);
-      get_data(data);
-      Serial.print("Got packet->");
+   char data[32];
+   if (apl_data_ready()){
+      apl_get_data(data);
+      Serial.print(" Got packet->");
       Serial.println(data);
       String str_data = data;
       handle_packet(str_data);

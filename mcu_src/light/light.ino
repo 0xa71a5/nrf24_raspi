@@ -51,7 +51,7 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
     if (content == "status")
     {
       construct_format(packet, "status", "online");
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
     else if (content == "switchState")//开关状态
     {
@@ -65,13 +65,13 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
         state = "off";//开关被关闭了
       }
       construct_format(packet, "status", state);
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
   }
   else if (type == "power")
   {
     construct_format(packet, "result", "suc");
-    nrf_send(packet.c_str());
+    apl_send(COORD_NET_ADDR, packet.c_str());
      if(content == "on")
     {
      turnOnLight(); 
@@ -84,7 +84,7 @@ void light_functional_handler(String type,String content,uint8_t senderId=0)
   else if (type == "angle" )
   {
     construct_format(packet, "result", "suc");
-    nrf_send(packet.c_str());
+    apl_send(COORD_NET_ADDR, packet.c_str());
     int index0 = content.indexOf('|');
     String angleNum = content.substring(0, index0);
     Serial.print(angleNum);Serial.print(",");
@@ -113,21 +113,17 @@ void setup()
   my_mac_addr = '4';
   set_mac_addr(&my_mac_addr);
   nrf_chip_config(12, 32);
-  Serial.println("Device light is running!");
   device_init();
+  zigbee_network_init(ZIGBEE_END_DEVICE);
+  Serial.println("Device light is running!");
 }
 
-uint8_t pipe=23;
 
 void loop()
 {
    char data[32];
-   if (data_ready()){
-      read_reg(0x07, &pipe, 1);
-      get_data(data);
-      pipe = (pipe >> 1) & 0x07;
-      Serial.print("Pipe ");
-      Serial.print(pipe);
+   if (apl_data_ready()){
+      apl_get_data(data);
       Serial.print(" Got packet->");
       Serial.println(data);
       String str_data = data;

@@ -45,7 +45,7 @@ void router_functional_handler(String type,String content,uint8_t senderId=0)
     if (content == "status")
     {
       construct_format(packet, "status", "online");
-      nrf_send(packet.c_str());
+      apl_send(COORD_NET_ADDR, packet.c_str());
     }
   }
 }
@@ -66,19 +66,17 @@ void setup()
   my_mac_addr = 'r';
   set_mac_addr(&my_mac_addr);
   nrf_chip_config(12, 32);
-  Serial.println("Device router is running!");
   device_init();
+  zigbee_network_init(ZIGBEE_ROUTER);
+  Serial.println("Device router is running!");
 }
 
-uint8_t pipe=23;
 
 void loop()
 {
    char data[32];
-   if (data_ready()){
-      get_data(data);
-      Serial.print("Pipe ");
-      Serial.print(pipe);
+   if (apl_data_ready()){
+      apl_get_data(data);
       Serial.print(" Got packet->");
       Serial.println(data);
       String str_data = data;
