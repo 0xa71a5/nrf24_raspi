@@ -8,8 +8,8 @@ uint32_t last_action_time = 0;
 #define LOCK_MOVE_TIME   180
 #define MIN_OPERATION_INTERVAL 1000
 
-//#define LOCK_TYPE_MOTOR
-#define LOCK_TYPE_RELAY
+#define LOCK_TYPE_MOTOR
+//#define LOCK_TYPE_RELAY
 
 
 Servo lockServo;
