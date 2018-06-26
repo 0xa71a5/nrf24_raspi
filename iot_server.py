@@ -217,41 +217,21 @@ class ApiHandler(tornado.web.RequestHandler):
             returnData["Content"]["result"] = status
         #灯控制器
         elif(typeVal == "getLightStatus"):
-            if (router1.getOnlineStatus() == "online"):
-                status = light1.getOnlineStatus()
-                returnData["Type"] = "getLightStatusResult"
-                returnData["Content"]["status"] = status
-            else:
-                status = "offline"
-                returnData["Type"] = "getLightStatusResult"
-                returnData["Content"]["status"] = status
+            status = light1.getOnlineStatus()
+            returnData["Type"] = "getLightStatusResult"
+            returnData["Content"]["status"] = status
         elif(typeVal == "getLightSwitchStatus"):
-            if (router1.getOnlineStatus() == "online"):
-                status = light1.getSwitchStatus()
-                returnData["Type"] = "getLightSwitchStatusResult"
-                returnData["Content"]["status"] = status
-            else:
-                status = ""
-                returnData["Type"] = "getLightSwitchStatusResult"
-                returnData["Content"]["status"] = status
+            status = light1.getSwitchStatus()
+            returnData["Type"] = "getLightSwitchStatusResult"
+            returnData["Content"]["status"] = status
         elif(typeVal == "turnOnLightPower"):
-            if (router1.getOnlineStatus() == "online"):
-                status = light1.turnOnPower()
-                returnData["Type"] = "turnOnLightPowerResult"
-                returnData["Content"]["result"] = status
-            else:
-                status = ""
-                returnData["Type"] = "turnOnLightPowerResult"
-                returnData["Content"]["result"] = status
+            status = light1.turnOnPower()
+            returnData["Type"] = "turnOnLightPowerResult"
+            returnData["Content"]["result"] = status
         elif(typeVal == "turnOffLightPower"):
-            if (router1.getOnlineStatus() == "online"):
-                status = light1.turnOffPower()
-                returnData["Type"] = "turnOffLightPowerResult"
-                returnData["Content"]["result"] = status
-            else:
-                status = ""
-                returnData["Type"] = "turnOffLightPowerResult"
-                returnData["Content"]["result"] = status
+            status = light1.turnOffPower()
+            returnData["Type"] = "turnOffLightPowerResult"
+            returnData["Content"]["result"] = status
         self.write(json.dumps(returnData))
 
 
