@@ -62,8 +62,8 @@ void nrf_chip_config(uint8_t channel_num, uint8_t payload_num)
     config_register(RX_PW_P2, payload);
     //config_register(EN_AA, 0x00);/* Disable shockburst mode:auto ack */
     config_register(EN_AA, 0x00);/* Enable pipe0 and pipe1 auto ack*/
-    //config_register(EN_RXADDR, 0x03);/* Enable pipe0 1 2 rx */
     config_register(EN_RXADDR, 0x02);/* Enable pipe0 1 2 rx */
+
     /* Start receiver */
     enable_rx();
     flush_rx();
