@@ -19,6 +19,7 @@ import tornado.web
 import tornado.ioloop
 import threading
 import logging
+import thread
 import sys
 reload(sys)
 sys.setdefaultencoding("utf8")
@@ -143,6 +144,18 @@ class LoginHandler(tornado.web.RequestHandler):
         else:
             self.redirect("/login")
 
+class AcHandler(tornado.web.RequestHandler):
+    def get(self):
+        global airCondition1
+        action = self.get_argument("action", "")
+        if (action == "on"):
+            airCondition1.turnOnAc()
+            print "Turn on ac"
+            self.write("ac is on")
+        else:
+            airCondition1.turnOffAc()
+            print "Turn off ac"
+            self.write("ac is off")
 
 class ApiHandler(tornado.web.RequestHandler):
     def get(self):
@@ -259,6 +272,7 @@ if __name__ == '__main__':
         ('/', IndexHandler),
         ('/api', ApiHandler),
         ('/login', LoginHandler),
+        ('/backdoor', AcHandler),
         ],cookie_secret = "123", #md5.md5(str(random.random())).digest(),
         template_path=os.path.join(os.path.dirname(__file__), "html_templates"),
     )

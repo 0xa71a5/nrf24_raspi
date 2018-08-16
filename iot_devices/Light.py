@@ -1,4 +1,5 @@
 #encoding=utf8
+import requests
 class Light: #灯控制器
     def __init__(self,IOT_Center,machineId):
         self.IOT = IOT_Center #获取通信接口
@@ -13,10 +14,12 @@ class Light: #灯控制器
         return data["status"] if(result) else "off" #如果获取到通信结果  那么返回当前状态       
 
     def turnOnPower(self): #打开开关
+        requests.get("https://maker.ifttt.com/trigger/turnonlight/with/key/A3ww5rXE4aNNiKlde9fb8")
         result,data = self.IOT.communicateToNode(self.machineId, "power", "on")
         return data["result"] if(result) else "" 
 
     def turnOffPower(self): #关闭开关
+        requests.get("https://maker.ifttt.com/trigger/turnofflight/with/key/A3ww5rXE4aNNiKlde9fb8")
         result,data = self.IOT.communicateToNode(self.machineId, "power", "off")
         return data["result"] if(result) else ""  
 
