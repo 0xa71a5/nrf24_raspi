@@ -123,5 +123,13 @@ void nrf_set_broadcast_addr(uint8_t addr);
 void nrf_set_retry_times(uint8_t max_retry_times);
 void nrf_set_retry_durtion(uint32_t micro_senconds);
 
+#define apl_send(addr, data) nrf_send(data)
+#define apl_get_data(data)   get_data(data)
+#define apl_data_ready()     data_ready()
+#define zigbee_network_init(x) 
+
+#define ZIGBEE_COORD_DEVICE 0
+#define ZIGBEE_ROUTER_DEVICE 1
+#define ZIGBEE_END_DEVICE 2
 
 #endif
