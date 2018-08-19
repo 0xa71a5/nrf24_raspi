@@ -29,12 +29,13 @@ class IOT(threading.Thread):
     def __init__(self):
         self.__init__("mac00") #默认地址是mac00
 
-    def __init__(self,my_addr):
+    def __init__(self, my_addr):
         super(IOT,self).__init__()
         self.max_timeout = 5 #最多十次重发
         self.send_wait_time = 0.1 # 100ms发射后等待时间
         self.rwlock = threading.Lock() #获取读写锁
-        self.rx_queue = {} #弃用defaultdict(Queue.Queue) #接收数据缓冲区 发送方地址作为索引 以默认队列形式存储收到的数据
+        self.rx_queue = {} #弃用defaultdict(Queue.Queue) 
+        #接收数据缓冲区 发送方地址作为索引 以默认队列形式存储收到的数据
         self.rx_queue_buffersize = 1000 #设定每个接受地址的最大缓冲是1000
         self.rx_addr_prefix = "mac0" #接收地址的前4位相同
         self.machine = lxc_nrf24.nrf24(my_addr = my_addr, channel = 12)
@@ -76,7 +77,7 @@ class IOT(threading.Thread):
 
     def flushHardwareRxBuffer(self): #刷新硬件接收寄存器缓存
         self.rwlock.acquire()
-        while ( self.machine.available() ): 
+        while (self.machine.available()): 
             recv = self.machine.read_str() #Flush RX buffer
         self.rwlock.release()
 
@@ -273,7 +274,7 @@ if __name__ == '__main__':
         ('/api', ApiHandler),
         ('/login', LoginHandler),
         ('/backdoor', AcHandler),
-        ],cookie_secret = "123", #md5.md5(str(random.random())).digest(),
+        ],cookie_secret = "123zzz@@@###&*s3T3", #md5.md5(str(random.random())).digest(),
         template_path=os.path.join(os.path.dirname(__file__), "html_templates"),
     )
     print "Running..."

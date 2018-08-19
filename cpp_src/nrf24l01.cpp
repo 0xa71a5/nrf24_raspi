@@ -7,50 +7,53 @@
 using namespace std;
 #include <nrf24l01.h>
 
-uint8_t PTX=0;
-uint8_t channel=0;
-uint8_t payload=32;
+static uint8_t in_tx_mode = 0;
+static uint8_t channel = 0;
+static uint8_t payload = 32;
 
-#define debug_printf(...)
-//#define debug_printf(...) printf( __VA_ARGS__)
+#ifdef DEBUG_TEST
+    #define debug_printf(...) printf( __VA_ARGS__)
+#else
+    #define debug_printf(...)
+#endif
 
 void nrf_init() 
 {   
     wiringPiSetup();
-    wiringPiSPISetup(SPI_CHANNEL,500000);//Initialize spi
+    wiringPiSPISetup(SPI_CHANNEL,500000);/* Initialize rasperi pi spi */
     pinMode(CE_PIN,OUTPUT);
-    ceLow();
+    ce_low();
 }
 
 
 void nrf_config() 
 {
-    configRegister(RF_CH,channel);
-    // Set length of incoming payload 
-    configRegister(RX_PW_P0, payload);
-    configRegister(RX_PW_P1, payload);
-    configRegister(RX_PW_P2, payload);
-    //configRegister(EN_AA, 0x00);//disable shockburst mode:auto ack
-    configRegister(EN_AA, 0x00);/* Enable pipe0 and pipe1 auto ack*/
-    configRegister(EN_RXADDR, 0x03);/* Enable pipe0 1 2 rx */
+    config_register(RF_CH,channel);
+    /* Set length of incoming payload */
+    config_register(RX_PW_P0, payload);
+    config_register(RX_PW_P1, payload);
+    config_register(RX_PW_P2, payload);
+    /* config_register(EN_AA, 0x00);//disable shockburst mode:auto ack */
+    config_register(EN_AA, 0x00);/* Enable pipe0 and pipe1 auto ack*/
+    config_register(EN_RXADDR, 0x03);/* Enable pipe0 1 2 rx */
 
     // Start receiver 
-    powerUpRx();
-    flushRx();
+    powerup_rx();
+    flush_rx();
 }
 
 void nrf_set_broadcast_addr(uint8_t addr)
 {
-  configRegister(RX_ADDR_P2, addr);
+  config_register(RX_ADDR_P2, addr);
 }
 
 void nrf_set_retry_times(uint8_t max_retry_times)
 {
     uint8_t rety_reg = 0x00;
 
-    readRegister(SETUP_RETR, &rety_reg, 1);
+    read_register(SETUP_RETR, &rety_reg, 1);
     rety_reg = (rety_reg & 0xf0) | (0x0f & max_retry_times);
-    configRegister(SETUP_RETR, rety_reg);
+    config_register(SETUP_RETR, rety_reg);
 }
 
 void nrf_set_retry_durtion(uint32_t micro_senconds)
@@ -65,183 +68,209 @@ void nrf_set_retry_durtion(uint32_t micro_senconds)
     micro_senconds --;
     micro_senconds /= 250;
 
-    readRegister(SETUP_RETR, &rety_reg, 1);
+    read_register(SETUP_RETR, &rety_reg, 1);
     rety_reg = (rety_reg & 0x0f) | ((uint8_t)micro_senconds << 4);
-    configRegister(SETUP_RETR, rety_reg);
+    config_register(SETUP_RETR, rety_reg);
 }
 
-void setRADDR(uint8_t * addr) // Sets the receiving address
+void set_rx_addr(uint8_t * addr) /* Sets the receiving address */
 {
     uint8_t reverse_addr[5];
-    debug_printf("setRADDR=[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", 
+    debug_printf("set_rx_addr=[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", 
         addr[0], addr[1], addr[2], addr[3], addr[4]);
     /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
     for (int i = 0; i < 5; i ++) {
-        reverse_addr[i] = addr[5-i-1];
+        reverse_addr[i] = addr[4 - i];
     }
 
-    ceLow();
-    writeRegister(RX_ADDR_P1, reverse_addr, 5);
-    ceHi();
+    ce_low();
+    write_register(RX_ADDR_P1, reverse_addr, 5);
+    ce_high();
 }
 
-void setTADDR(uint8_t * addr) // Sets the transmitting address
+void set_tx_addr(uint8_t * addr) /* Sets the transmitting address */
 {
     uint8_t reverse_addr[5];
+
     /* RX_ADDR_P0 must be set to the sending addr for auto ack to work. */
     for (uint8_t i = 0; i < 5; i ++) {
         reverse_addr[i] = addr[5-i-1];
     }
-    writeRegister(RX_ADDR_P0, reverse_addr, 5);
-    writeRegister(TX_ADDR, reverse_addr, 5);
-    debug_printf("setTADDR=[%c %c %c %c %c]\n",
+    write_register(RX_ADDR_P0, reverse_addr, 5);
+    write_register(TX_ADDR, reverse_addr, 5);
+    debug_printf("set_tx_addr=[%c %c %c %c %c]\n",
         addr[0], addr[1], addr[2], addr[3], addr[4]);
 }
 
-bool dataReady() // Checks if data is available for reading
+bool data_ready() /* Checks if data is available for reading */
 {
-    uint8_t status = getStatus();
-    if ( status & (1 << RX_DR) ) return 1;
-    return !rxFifoEmpty();
+    uint8_t status = get_status();
+    if ( status & (1 << RX_DR) )
+        return 1;
+    
+    return !rx_fifo_empty();
 }
 
-bool rxFifoEmpty(){
-    uint8_t fifoStatus;
-    readRegister(FIFO_STATUS,&fifoStatus,sizeof(fifoStatus));
-    return (fifoStatus & (1 << RX_EMPTY));
+bool rx_fifo_empty(){
+    uint8_t fifo_status;
+
+    read_register(FIFO_STATUS, &fifo_status, sizeof(fifo_status));
+    return (fifo_status & (1 << RX_EMPTY));
 }
 
-void getData(uint8_t * data) // Reads payload bytes into data array
+void get_data(uint8_t * data) /* Reads payload bytes into data array */
 {
-    uint8_t *temp_buffer = (uint8_t *)malloc(payload+1);
+    uint8_t *temp_buffer = (uint8_t *)malloc(payload + 1);
+
     memset(temp_buffer,0,payload+1);
+
     temp_buffer[0] = R_RX_PAYLOAD;
-    wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,payload+1);
-    memcpy(data,temp_buffer+1,payload);
-    configRegister(STATUS,(1<<RX_DR));   // Reset status register
+    wiringPiSPIDataRW(SPI_CHANNEL, temp_buffer, payload + 1);
+    
+    memcpy(data, temp_buffer + 1, payload);
+    config_register(STATUS, (1 << RX_DR));   /* Reset status register */
+
     free(temp_buffer);
-    debug_printf("getData=[%s]\n", data);
+    debug_printf("get_data=[%s]\n", data);
 }
 
-void configRegister(uint8_t reg, uint8_t value)
+void config_register(uint8_t reg, uint8_t value)
 {
     uint8_t temp_buffer[2];
+
     temp_buffer[0] = (W_REGISTER | (REGISTER_MASK & reg));
     temp_buffer[1] = value;
-    wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,2);
+
+    wiringPiSPIDataRW(SPI_CHANNEL, temp_buffer, 2);
 }
 
-void readRegister(uint8_t reg, uint8_t * value, uint8_t len)// Reads an array of bytes from the given start position in the MiRF registers.
+void read_register(uint8_t reg, uint8_t * value, uint8_t len)
+/* Reads an array of bytes from the given start position in the MiRF registers. */
 {
-    uint8_t *temp_buffer = (uint8_t *)malloc(len+1);
-    memcpy(temp_buffer+1,value,len);
+    uint8_t *temp_buffer = (uint8_t *)malloc(len + 1);
+
+    memcpy(temp_buffer + 1, value, len);
+
     temp_buffer[0] = (R_REGISTER | (REGISTER_MASK & reg));
-    wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,len+1);
-    memcpy(value,temp_buffer+1,len);
+
+    wiringPiSPIDataRW(SPI_CHANNEL, temp_buffer, len + 1);
+
+    memcpy(value, temp_buffer + 1, len);
     free(temp_buffer);
 }
 
-void writeRegister(uint8_t reg, uint8_t * value, uint8_t len) // Writes an array of bytes into inte the MiRF registers.
+void write_register(uint8_t reg, uint8_t * value, uint8_t len) 
+/* Writes an array of bytes into inte the MiRF registers. */
 {
     uint8_t *temp_buffer = (uint8_t *)malloc(len+1);
+
     temp_buffer[0] = (W_REGISTER | (REGISTER_MASK & reg));
-    memcpy(temp_buffer+1,value,len);
-    wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,len+1);
+
+    memcpy(temp_buffer + 1, value, len);
+
+    wiringPiSPIDataRW(SPI_CHANNEL, temp_buffer, len + 1);
     free(temp_buffer);
 }
 
-void nrf_send(uint8_t * value) // Sends a data package to the default address. Be sure to send the correct
+void nrf_send(uint8_t * value) 
+/* Sends a data package to the default address.
+    Make sure to send the correct*/
 {
-// amount of bytes as configured as payload on the receiver.
     uint8_t status;
-    status = getStatus();
-    while (PTX) {
-            status = getStatus();
+
+    status = get_status();
+    while (in_tx_mode) {
+            status = get_status();
 
             if((status & ((1 << TX_DS)  | (1 << MAX_RT)))){
-                    PTX = 0;
+                    in_tx_mode = 0;
                     break;
             }
-    }                  // Wait until last paket is send
-    ceLow();
-    powerUpTx();       // Set to transmitter mode , Power up
+    }                  /* Wait until last paket is send */
+    ce_low();
+    powerup_tx();       /* Set to transmitter mode , Power up*/
 
     uint8_t temp = FLUSH_TX;
-    wiringPiSPIDataRW(SPI_CHANNEL,&temp,1);
+    wiringPiSPIDataRW(SPI_CHANNEL, &temp, 1);
 
-    uint8_t *temp_buffer = (uint8_t *) malloc(payload+1);
+    uint8_t *temp_buffer = (uint8_t *) malloc(payload + 1);
     temp_buffer[0] = W_TX_PAYLOAD;
-    memcpy ( temp_buffer+1 , value , payload);
-    wiringPiSPIDataRW(SPI_CHANNEL,temp_buffer,payload+1);
 
-    ceHi();                     // Start transmission
-    while(isSending());
+    memcpy(temp_buffer + 1, value, payload);
+    wiringPiSPIDataRW(SPI_CHANNEL, temp_buffer, payload + 1);
+
+    ce_high();
+    while(is_sending());
     debug_printf("nrf_send payload=[%s]\n", value);
 }
-bool isSending(){
+
+bool is_sending(){
         uint8_t status;
-        if(PTX){
-                status = getStatus();
-                /*
-                 *  if sending successful (TX_DS) or max retries exceded (MAX_RT).
-                 */
+
+        if (in_tx_mode) {
+                status = get_status();
+                /* if sending successful (TX_DS) or max retries exceded (MAX_RT).*/
                 if((status & ((1 << TX_DS)  | (1 << MAX_RT)))){
-                        powerUpRx();
-                        return false; 
+                    powerup_rx();
+                    return false; 
                 }
                 return true;
         }
         return false;
 }
 
-uint8_t getStatus(){
+uint8_t get_status(){
         uint8_t rv;
-        readRegister(STATUS,&rv,1);
+
+        read_register(STATUS, &rv, 1);
         return rv;
 }
 
-void powerUpRx(){
-        PTX = 0;
-        ceLow();
-        configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
-        ceHi();
-        configRegister(STATUS,(1 << TX_DS) | (1 << MAX_RT)); 
+void powerup_rx(){
+        in_tx_mode = 0;
+
+        ce_low();
+        config_register(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (1<<PRIM_RX) ) );
+        ce_high();
+        config_register(STATUS,(1 << TX_DS) | (1 << MAX_RT)); 
 }
 
-void flushRx(){
+void flush_rx(){
     uint8_t temp = FLUSH_RX;
-    wiringPiSPIDataRW(SPI_CHANNEL,&temp,1);
+
+    wiringPiSPIDataRW(SPI_CHANNEL, &temp, 1);
 }
 
-void powerUpTx(){
-        PTX = 1;
-        configRegister(CONFIG, mirf_CONFIG | ( (1<<PWR_UP) | (0<<PRIM_RX) ) );
+void powerup_tx(){
+    in_tx_mode = 1;
+
+    config_register(CONFIG, mirf_CONFIG | ((1<<PWR_UP) | (0<<PRIM_RX)));
 }
 
-void ceHi(){
-        digitalWrite(CE_PIN,1);
+void ce_high(){
+    digitalWrite(CE_PIN, 1);
 }
 
-void ceLow(){
-        digitalWrite(CE_PIN,0);
+void ce_low(){
+    digitalWrite(CE_PIN, 0);
 }
 
-void powerDown(){
-        ceLow();
-        configRegister(CONFIG, mirf_CONFIG );
+void power_down(){
+    ce_low();
+    config_register(CONFIG, mirf_CONFIG);
 }
 
 
-void setChannel(int channel_)
+void set_channel(int channel_)
 {
     channel = channel_;
-    configRegister(RF_CH,channel);
+    config_register(RF_CH, channel);
 }
-void setPayloadLength(int length)
+void set_payload_length(int length)
 {
     payload = length;
-    configRegister(RX_PW_P0, payload);
-    configRegister(RX_PW_P1, payload);
+    config_register(RX_PW_P0, payload);
+    config_register(RX_PW_P1, payload);
 }
 
 
@@ -251,19 +280,18 @@ extern "C"{
     nrf_init();
   }
 
-  void nrf24_setup(uint8_t *my_addr,int channel)
+  void nrf24_setup(uint8_t *my_addr, int channel)
   {
-    setChannel(channel);
+    set_channel(channel);
     nrf_init();
-    setRADDR(my_addr);
-    setPayloadLength(32);
+    set_rx_addr(my_addr);
+    set_payload_length(32);
     nrf_config();
   }
 
   void nrf24_tx_addr(uint8_t *target_addr)
   {
-    setTADDR(target_addr);
-
+    set_tx_addr(target_addr);
   }
 
   void nrf24_send(uint8_t *data)
@@ -273,12 +301,12 @@ extern "C"{
 
   uint8_t nrf24_available()
   {
-    return dataReady();
+    return data_ready();
   }
 
   void nrf24_read(uint8_t *data)
   {
-      getData(data);
+      get_data(data);
   }
 
   void nrf_test(uint8_t *data)
@@ -289,6 +317,6 @@ extern "C"{
 
   void read_status(void)
   {
-    return getStatus();
+    return get_status();
   }
 }

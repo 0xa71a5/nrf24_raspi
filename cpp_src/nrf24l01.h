@@ -83,42 +83,30 @@
 #define CE_PIN 6
 #define SPI_CHANNEL 0
 
-typedef struct __test_stru{
-    int aaa;
-    int bbb;
-    int ccc;
-}test_handle_t;
-// D:\\work\\IOT\\nrf24_raspi\\cpp_src
-
 void nrf_init();
 void nrf_config();
 void nrf_send(uint8_t *value);
-void setRADDR(uint8_t * adr);
-void setTADDR(uint8_t * adr);
-bool dataReady();
-bool isSending();
-bool rxFifoEmpty();
-bool txFifoEmpty();
-void getData(uint8_t * data);
-uint8_t getStatus();
-void configRegister(uint8_t reg, uint8_t value);
-void readRegister(uint8_t reg, uint8_t * value, uint8_t len);
-void writeRegister(uint8_t reg, uint8_t * value, uint8_t len);
-void powerUpRx();
-void powerUpTx();
-void powerDown();
-void csnHi();
-void csnLow();
-void ceHi();
-void ceLow();
-void flushRx();
+void set_rx_addr(uint8_t * adr);
+void set_tx_addr(uint8_t * adr);
+bool data_ready();
+bool is_sending();
+bool rx_fifo_empty();
+bool tx_fifo_empty();
+void get_data(uint8_t * data);
+uint8_t get_status();
+void config_register(uint8_t reg, uint8_t value);
+void read_register(uint8_t reg, uint8_t * value, uint8_t len);
+void write_register(uint8_t reg, uint8_t * value, uint8_t len);
+void powerup_rx();
+void powerup_tx();
+void power_down();
+void csn_high();
+void csn_low();
+void ce_high();
+void ce_low();
+void flush_rx();
 uint8_t spi_transfer(uint8_t data);
-void setChannel(int channel);
-void setPayloadLength(int length);
-
-
-
-
-
+void set_channel(int channel);
+void set_payload_length(int length);
 
 #endif

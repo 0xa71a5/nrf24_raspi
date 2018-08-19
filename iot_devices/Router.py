@@ -1,6 +1,6 @@
 #encoding=utf8
 class Router:
-    def __init__(self,IOT_Center,machineId):
+    def __init__(self, IOT_Center, machineId):
         self.IOT = IOT_Center #获取通信接口
         self.machineId = machineId #获取本控制器的通信地址
 
